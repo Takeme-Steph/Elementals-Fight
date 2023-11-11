@@ -17,7 +17,7 @@ public class LoadCharacter : MonoBehaviour
         GameObject prefab = charPrefabs[selectedCharacter];
         // instantiate an instance of the selected character
         GameObject player = Instantiate(prefab, prefab.transform.position, prefab.transform.rotation);
-        player.SetActive(true); //ACtivate character instance
+        player.SetActive(true); //Activate character instance
         player.name = "Player";
 
     }
