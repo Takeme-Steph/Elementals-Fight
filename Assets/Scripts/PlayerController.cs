@@ -1,17 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private InputReader input;
-    [SerializeField] private float playerMoveSpeed; //this is players movement speed.
-    [SerializeField] private float playerJumpForce; //this is players jump force.
+    [SerializeField] private float playerMoveSpeed = 3; //this is players movement speed.
+    [SerializeField] private float playerJumpForce = 5; //this is players jump force.
+    [SerializeField] private float envMaxSizeX = 65.0f; //max lenght of the play envirenment.
+    [SerializeField] private float envMinSizeX = -34.0f; //min lenght of the play environment.
+    private float bufferX = 0.1f; // buffer amount to substract/ add when player reaches edge of the screen.
+    
+    public bool isOnGround; // track when the player is on ground
     private Rigidbody _playerRb; //reference of the players rigid body.
     private Vector2 _moveDirection;
 
-    private bool _isJumping;
+    private bool _isJumping; // track when the player is jumping
 
     // Start is called before the first frame update
     void Start()
@@ -45,16 +51,27 @@ public class PlayerController : MonoBehaviour
         }
 
         // Only allow movement on the x axis
-        transform.position += new Vector3(_moveDirection.x,0, 0) 
-            * (playerMoveSpeed * Time.deltaTime);
+        // Reset player position if they move out of bounds
+        if (transform.position.x < envMinSizeX)
+        {
+            transform.position = new Vector3(envMinSizeX + bufferX, 0, transform.position.z);
+        }
+        else if (transform.position.x >= envMaxSizeX)
+        {
+            transform.position = new Vector3(envMaxSizeX - bufferX, 0, transform.position.z);
+        }
+        else
+        {
+            transform.position += new Vector3(_moveDirection.x,0, 0) * (playerMoveSpeed * Time.deltaTime);
+        }
     }
 
     private void Jump()
     {
-        if(_isJumping)
+        if(_isJumping && isOnGround)
         {
-            _playerRb.AddForce(Vector3.up * (100 * playerJumpForce));
-            //transform.position += new Vector3(0,1, 0) * (playerJumpForce * Time.deltaTime);
+            _playerRb.AddForce(Vector3.up * playerJumpForce, ForceMode.Impulse); // imediately jump
+            isOnGround = false; // set the player on ground check to false
         }
     }
 
@@ -71,5 +88,10 @@ public class PlayerController : MonoBehaviour
     private void HandleCanceledJump()
     {
         _isJumping = false;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        isOnGround = true;
     }
 }
