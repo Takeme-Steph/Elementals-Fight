@@ -2318,8 +2318,9 @@ GameObject:
   m_Component:
   - component: {fileID: 7436740926910661264}
   - component: {fileID: 7172979919335303201}
-  - component: {fileID: 950640008694844461}
   - component: {fileID: 1165167186846599815}
+  - component: {fileID: 1625258788960677049}
+  - component: {fileID: 3311423737265760273}
   m_Layer: 0
   m_Name: magi_earthen_v1.0
   m_TagString: Untagged
@@ -2366,27 +2367,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!65 &950640008694844461
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6778421645541079769}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.4521116, y: 3.5089004, z: 1.2441341}
-  m_Center: {x: 5.5020825e-17, y: 1.6662685, z: 0.03512174}
 --- !u!54 &1165167186846599815
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2412,8 +2392,49 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 120
   m_CollisionDetection: 0
+--- !u!114 &1625258788960677049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6778421645541079769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45b6b96e3345f0840bf96ee6278b248b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  input: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
+  playerMoveSpeed: 10
+  playerJumpForce: 7
+  envMaxSizeX: 60
+  envMinSizeX: -42
+  isOnGround: 0
+--- !u!136 &3311423737265760273
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6778421645541079769}
+  m_Material: {fileID: 13400000, guid: 61a00d576d008d0418ac676ad92ee410, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.48669022
+  m_Height: 3.428492
+  m_Direction: 1
+  m_Center: {x: -0.0067682266, y: 1.6595476, z: 0.04949981}
 --- !u!1 &6862055536725673513
 GameObject:
   m_ObjectHideFlags: 0
