@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int _playerHP = 100; // The player's health points.
     [SerializeField] private float _playerMoveSpeed; //this is players movement speed.
     [SerializeField] private float _playerJumpForce; //this is players jump force.
+    public bool _isMainPlayer; // flag if this is the player controlled character
 
     // hardcoded variables that need to be updated
     
@@ -28,7 +29,11 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        playerRb = GetComponent<Rigidbody>(); //get player rigidbody
+        // Try to get player rigidbody and throw an error message if not found
+        if(!TryGetComponent<Rigidbody>(out playerRb))
+        {
+            Debug.Log(gameObject.name + "has no rigidbody attached");
+        }
         
         // subscribe to events
         input.MoveEvent += HandleMove;
@@ -36,9 +41,14 @@ public class PlayerController : MonoBehaviour
         input.JumpCanceledEvent += HandleCanceledJump; 
 
         // Initialize variables
-        sceneHandler = GameObject.Find("GameManager").GetComponent<SceneHandler>();
-        _playerMoveSpeed = sceneHandler._playerMoveSpeed;
-        _playerJumpForce = sceneHandler._playerJumpForce;        
+        _playerMoveSpeed = 10;
+        _playerJumpForce = 7;
+
+        // Tryto get scene handler script and throw an error message if not found
+        if(!GameObject.Find("GameManager").TryGetComponent<SceneHandler>(out sceneHandler))
+        {
+            Debug.Log("No scene handler script found in scene. Game will not run");
+        }    
     }
 
     private void OnDisable()
@@ -59,9 +69,9 @@ public class PlayerController : MonoBehaviour
             Jump();
             KeepInBounds();
         }
-        
     }
 
+    // Move the player on the x axis
     private void Move()
     {
         // Do nothing if player is not moving
@@ -75,10 +85,10 @@ public class PlayerController : MonoBehaviour
         {
             transform.Translate(new Vector3(_moveDirection.x,0, 0) * (_playerMoveSpeed * Time.deltaTime), 
             Space.World);
-
         }
     }
 
+    // Make player jump
     private void Jump()
     {
         // check if player is on ground and starts jumping
@@ -117,10 +127,15 @@ public class PlayerController : MonoBehaviour
             transform.position = new Vector3(sceneHandler._safeZoneRightX - sceneHandler._resetBuffer, 0, 
             transform.position.z);
         }
-        else if (transform.position.y < sceneHandler._groundY)
+        else if (transform.position.y < sceneHandler.ground.transform.position.y)
         {
-            transform.position = new Vector3(transform.position.x, sceneHandler._groundY + sceneHandler._resetBuffer, 
-            transform.position.z);
+            transform.position = new Vector3(transform.position.x, sceneHandler.ground.transform.position.y
+            + sceneHandler._resetBuffer, transform.position.z);
+        }
+        else if (transform.position.z != sceneHandler.ground.transform.position.z)
+        {
+            transform.position = new Vector3(transform.position.x, transform.position.y,
+                sceneHandler.ground.transform.position.z);
         }
         else
         {
@@ -130,6 +145,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        // Set player on ground flag when he player collides with the ground
         if(collision.gameObject.CompareTag("Ground"))
         {
             _isOnGround = true;

@@ -6,8 +6,10 @@ using UnityEngine.SceneManagement;
 public class PlayerSelection : MonoBehaviour
 {
     public GameObject[] characters; // reference characters to be picked from
-    public int selectedCharacter = 0; // store selected character index
-    private int FightScene = 1; // store fight scene index
+    private int selectedCharacter = 0; // store selected character index
+    
+    // ToDO Update to use an enum
+    private readonly int FightScene = 1; // store fight scene index
     
     // Start is called before the first frame update
     void Start()

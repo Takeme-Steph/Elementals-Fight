@@ -10,13 +10,13 @@ public class InputReader : ScriptableObject, PlayerInput.IGroundActions, PlayerI
     private PlayerInput _playerInput; // reference to the player's input system
 
     // Gameplay Events
-    public event Action<Vector2> MoveEvent;
-    public event Action JumpEvent;
-    public event Action JumpCanceledEvent;
+    public event Action<Vector2> MoveEvent = delegate { };
+    public event Action JumpEvent = delegate { };
+    public event Action JumpCanceledEvent = delegate { };
 
     // UI Events
-    public event Action PauseEvent;
-    public event Action ResumeEvent;
+    public event Action PauseEvent = delegate { };
+    public event Action ResumeEvent = delegate { };
 
     private void OnEnable()
     {
