@@ -11,7 +11,7 @@ PrefabInstance:
     - target: {fileID: 6778421645541079769, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
       propertyPath: m_Name
-      value: magi_earthen_v1.0 Variant
+      value: EarthMage
       objectReference: {fileID: 0}
     - target: {fileID: 6778421645541079769, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
@@ -26,7 +26,7 @@ PrefabInstance:
     - target: {fileID: 7436740926910661264, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 7436740926910661264, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}

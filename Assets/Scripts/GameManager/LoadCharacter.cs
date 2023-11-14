@@ -6,7 +6,6 @@ using UnityEngine;
 public class LoadCharacter : MonoBehaviour
 {
     public GameObject[] charPrefabs;
-    public Transform SpawnPoint;
     private int selectedCharacter = 0; // have a default selected character index
 
     // Start is called before the first frame update
@@ -17,8 +16,8 @@ public class LoadCharacter : MonoBehaviour
         GameObject prefab = charPrefabs[selectedCharacter];
         // instantiate an instance of the selected character
         GameObject player = Instantiate(prefab, prefab.transform.position, prefab.transform.rotation);
-        player.SetActive(true); //Activate character instance
-        player.name = "Player";
+        player.SetActive(true); // Activate character instance
+        player.tag = "Player"; // Tag the instanciated character as a player.
 
     }
 
