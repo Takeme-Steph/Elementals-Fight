@@ -571,7 +571,7 @@ Transform:
   m_GameObject: {fileID: 1549288242994663819}
   serializedVersion: 2
   m_LocalRotation: {x: 0.067175955, y: 0.21636327, z: -0.8361424, w: 0.49953994}
-  m_LocalPosition: {x: 0.47, y: 0, z: -0.21}
+  m_LocalPosition: {x: 0.58, y: 0.2, z: -0.23}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2407,11 +2407,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   input: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
-  playerMoveSpeed: 10
-  playerJumpForce: 7
-  envMaxSizeX: 60
-  envMinSizeX: -42
-  isOnGround: 0
+  _playerHP: 100
+  _playerMoveSpeed: 0
+  _playerJumpForce: 0
+  _isMainPlayer: 0
 --- !u!136 &3311423737265760273
 CapsuleCollider:
   m_ObjectHideFlags: 0

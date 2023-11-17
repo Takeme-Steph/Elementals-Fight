@@ -9,23 +9,38 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     // Player properties
-    [SerializeField] private InputReader input;
+    [SerializeField] private InputReader input; // Reference the 3rd party input reader
     [SerializeField] private int _playerHP = 100; // The player's health points.
     [SerializeField] private float _playerMoveSpeed; //this is players movement speed.
     [SerializeField] private float _playerJumpForce; //this is players jump force.
     public bool _isMainPlayer; // flag if this is the player controlled character
 
-    // hardcoded variables that need to be updated
-    
-    
-    // Flags
-    private bool _isOnGround; // track when the player is on ground
-    private bool _isJumping; // track when the player is jumping
-
     private Rigidbody playerRb; // reference of the players rigid body.
+    private PlayerStateManager playerState; // reference of the players rigid body.
+    
     private Vector2 _moveDirection; // Vector 2 value of player's movement via the input system
     private SceneHandler sceneHandler; // Reference the scene handler script  
 
+    public bool _jump;
+
+    
+    private void OnEnable()
+    {
+        // subscribe to events
+        input.MoveEvent += HandleMove;
+        input.JumpEvent += HandleJump;
+        input.JumpCanceledEvent += HandleCanceledJump;
+    }
+    
+    private void OnDisable()
+    {
+        // Unsubscribe to events
+        input.MoveEvent -= HandleMove;
+        input.JumpEvent -= HandleJump;
+        input.JumpCanceledEvent -= HandleCanceledJump; 
+    }
+
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -34,11 +49,6 @@ public class PlayerController : MonoBehaviour
         {
             Debug.Log(gameObject.name + "has no rigidbody attached");
         }
-        
-        // subscribe to events
-        input.MoveEvent += HandleMove;
-        input.JumpEvent += HandleJump;
-        input.JumpCanceledEvent += HandleCanceledJump; 
 
         // Initialize variables
         _playerMoveSpeed = 10;
@@ -48,15 +58,9 @@ public class PlayerController : MonoBehaviour
         if(!GameObject.Find("GameManager").TryGetComponent<SceneHandler>(out sceneHandler))
         {
             Debug.Log("No scene handler script found in scene. Game will not run");
-        }    
-    }
+        }
 
-    private void OnDisable()
-    {
-        // Unsubscribe to events
-        input.MoveEvent -= HandleMove;
-        input.JumpEvent -= HandleJump;
-        input.JumpCanceledEvent -= HandleCanceledJump; 
+        TryGetComponent<PlayerStateManager>(out playerState);  
     }
 
     // Update is called once per frame
@@ -71,18 +75,31 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void OnCollisionEnter(Collision collision)
+    {
+        // Set player on ground flag when he player collides with the ground
+        if(collision.gameObject.CompareTag("Ground"))
+        {
+           playerState.BeGrounded();
+        }
+        
+    }
+
     // Move the player on the x axis
     private void Move()
     {
         // Do nothing if player is not moving
         if(_moveDirection == Vector2.zero)
         {
+            playerState.StopWalking();
             return;
         }
         // Only allow movement on the x axis if within bounds
         else if(transform.position.x > sceneHandler._safeZoneLeftX && 
             transform.position.x < sceneHandler._safeZoneRightX)
         {
+            playerState.StartWalking(_moveDirection.x); // Set player walk direction
+            // move player relative to world space
             transform.Translate(new Vector3(_moveDirection.x,0, 0) * (_playerMoveSpeed * Time.deltaTime), 
             Space.World);
         }
@@ -92,10 +109,10 @@ public class PlayerController : MonoBehaviour
     private void Jump()
     {
         // check if player is on ground and starts jumping
-        if(_isJumping && _isOnGround)
+        if(_jump && playerState._isOnGround)
         {
-            playerRb.AddForce(Vector3.up * _playerJumpForce, ForceMode.Impulse); // imediately jump
-            _isOnGround = false; // set the player on ground check to false
+            playerState.StartJumping();
+            playerRb.AddForce(Vector3.up * _playerJumpForce * Time.deltaTime, ForceMode.Impulse);// imediately jump
         }
     }
 
@@ -106,17 +123,17 @@ public class PlayerController : MonoBehaviour
 
     private void HandleJump()
     {
-        _isJumping = true;
+        _jump = true;
     }
 
     private void HandleCanceledJump()
     {
-        _isJumping = false;
+        _jump = false;
     }
 
+    // Reset player position if they move out of bounds
     private void KeepInBounds()
     {
-        // Reset player position if they move out of bounds
         if (transform.position.x <= sceneHandler._safeZoneLeftX)
         {
             transform.position = new Vector3(sceneHandler._safeZoneLeftX + sceneHandler._resetBuffer, 0, 
@@ -141,15 +158,5 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        // Set player on ground flag when he player collides with the ground
-        if(collision.gameObject.CompareTag("Ground"))
-        {
-            _isOnGround = true;
-        }
-        
     }
 }
