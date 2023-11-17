@@ -7,12 +7,13 @@ using UnityEngine.Events;
 public class InputReader : ScriptableObject, PlayerInput.IGroundActions, PlayerInput.IUIActions
 
 {   
-    private PlayerInput _playerInput; // reference to the player's input system
+    private PlayerInput _playerInput; // reference to the input actions class to be used
 
     // Gameplay Events
     public event Action<Vector2> MoveEvent = delegate { };
     public event Action JumpEvent = delegate { };
     public event Action JumpCanceledEvent = delegate { };
+    public event Action AttackEvent = delegate { };
 
     // UI Events
     public event Action PauseEvent = delegate { };
@@ -46,7 +47,8 @@ public class InputReader : ScriptableObject, PlayerInput.IGroundActions, PlayerI
     }
     public void OnAttack(InputAction.CallbackContext context)
     {
-        
+        if (context.phase == InputActionPhase.Started)
+			AttackEvent.Invoke();
     }
     public void OnPause(InputAction.CallbackContext context)
     {
