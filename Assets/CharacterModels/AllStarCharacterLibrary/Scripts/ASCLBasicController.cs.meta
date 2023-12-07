@@ -1,0 +1,30 @@
+fileFormatVersion: 2
+guid: c58cb0b024c0ff043a4ce8fda0a315ad
+timeCreated: 1497787502
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - game: {instanceID: 0}
+  - stats: {instanceID: 0}
+  - swing: {instanceID: 0}
+  - currentZone: {instanceID: 0}
+  - floorPlane: {instanceID: 0}
+  - destFloor: {instanceID: 0}
+  - clickedFloor: {instanceID: 0}
+  - attackPlane: {instanceID: 0}
+  - hitReport: {fileID: 427970, guid: 309bce038b37ec54cbdb9131a0fc56a5, type: 2}
+  - particleHit: {fileID: 444362, guid: b10d17f93a8f6424abd7db0cddbfdf2e, type: 2}
+  - targetedEnemy: {instanceID: 0}
+  - aimAssist: {instanceID: 0}
+  - aimPoint: {instanceID: 0}
+  - mountedPlane: {instanceID: 0}
+  - lookAtTarget: {instanceID: 0}
+  - movementTarget: {instanceID: 0}
+  - attackTarget: {instanceID: 0}
+  - angler: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
