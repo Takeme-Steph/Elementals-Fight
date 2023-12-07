@@ -7,6 +7,7 @@ public class LoadCharacter : MonoBehaviour
 {
     public GameObject[] charPrefabs; // Reference playable characters
     private int _selectedCharacter = 0; // have a default selected character index
+    private int _selectedOpponent = 1;
     private SceneHandler sceneHandler; // Reference to the scene handler script
     private float _spawnX; // Player spawn x location
     private float _spawnY; // Player spawn y location
@@ -47,11 +48,26 @@ public class LoadCharacter : MonoBehaviour
         }
         playerController._isMainPlayer = true; // Set to be the player controlled character
 
+        SpawnOpponent();
+
     }
 
     // Update is called once per frame
     void Update()
     {
         
+    }
+
+    void SpawnOpponent()
+    {
+        // Get the selected opponent character data
+        _selectedOpponent = PlayerPrefs.GetInt("selectedOpponent"); // get the selected char index
+        GameObject prefab = charPrefabs[_selectedOpponent]; // Get selected character
+        Vector3 _playerSpawnLocation = new Vector3(_spawnX + 5, _spawnY,_spawnZ); // Set spawn location of the player
+        
+        // instantiate an instance of the selected opponent character
+        GameObject opponent = Instantiate(prefab, _playerSpawnLocation, Quaternion.Euler(0,-90,0));
+        opponent.SetActive(true); // set character instance to active
+        opponent.tag = "Player"; // Tag the instanciated character as a opponent.
     }
 }

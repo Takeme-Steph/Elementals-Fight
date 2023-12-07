@@ -6,7 +6,9 @@ using UnityEngine.SceneManagement;
 public class PlayerSelection : MonoBehaviour
 {
     public GameObject[] characters; // reference characters to be picked from
-    private int selectedCharacter = 0; // store selected character index
+    public GameObject[] opponents; // reference characters to be picked from
+    private int _selectedPlayer = 0; // store selected character index
+    private int _selectedOpponent = 1; // store selected opponent index
     
     // ToDO Update to use an enum
     private readonly int FightScene = 1; // store fight scene index
@@ -23,32 +25,55 @@ public class PlayerSelection : MonoBehaviour
         
     }
 
-    // Deactivate current selected character and activate next character
-    public void NextCharacter()
+    // Deactivate current selected player and activate next player
+    public void NextPlayer()
     {
-        characters[selectedCharacter].SetActive(false); // Deactivate currently selected character
+        characters[_selectedPlayer].SetActive(false); // Deactivate currently selected character
         // Update selected character to the next charater,and run in a loop
-        selectedCharacter = (selectedCharacter+1) % characters.Length; 
-        characters[selectedCharacter].SetActive(true); // Active newly selected character
+        _selectedPlayer = (_selectedPlayer+1) % characters.Length; 
+        characters[_selectedPlayer].SetActive(true); // Active newly selected character
     }
 
-    // Deactivate current selected character and activate previous character
-    public void PreviousCharacter()
+    // Deactivate current selected player and activate previous player
+    public void PreviousPlayer()
     {
-        characters[selectedCharacter].SetActive(false); // Deactivate currently selected character
+        characters[_selectedPlayer].SetActive(false); // Deactivate currently selected character
         // Update selected character to the previous charater,and run in a loop
-        selectedCharacter --;
-        if(selectedCharacter < 0)
+        _selectedPlayer --;
+        if(_selectedPlayer < 0)
         {
-            selectedCharacter += characters.Length;
+            _selectedPlayer += characters.Length;
         }
-        characters[selectedCharacter].SetActive(true); // Active newly selected character
+        characters[_selectedPlayer].SetActive(true); // Active newly selected character
+    }
+
+ // Deactivate current selected player and activate next player
+    public void NextOpponent()
+    {
+        opponents[_selectedOpponent].SetActive(false); // Deactivate currently selected character
+        // Update selected character to the next charater,and run in a loop
+        _selectedOpponent = (_selectedOpponent+1) % characters.Length; 
+        opponents[_selectedOpponent].SetActive(true); // Active newly selected character
+    }
+
+    // Deactivate current selected player and activate previous player
+    public void PreviousOpponent()
+    {
+        opponents[_selectedOpponent].SetActive(false); // Deactivate currently selected character
+        // Update selected character to the previous charater,and run in a loop
+        _selectedOpponent --;
+        if(_selectedOpponent < 0)
+        {
+            _selectedOpponent += characters.Length;
+        }
+        opponents[_selectedOpponent].SetActive(true); // Active newly selected character
     }
 
     // Load the next (fight) scene
     public void StartGame()
     {
-        PlayerPrefs.SetInt("selectedCharacter",selectedCharacter); // Store the selected character index 
+        PlayerPrefs.SetInt("selectedCharacter",_selectedPlayer); // Store the selected character index 
+        PlayerPrefs.SetInt("selectedOpponent",_selectedOpponent); // Store the selected character index 
         SceneManager.LoadScene(FightScene, LoadSceneMode.Single); // Load the next scene and close current scene
     }
 }

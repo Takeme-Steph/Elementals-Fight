@@ -51,8 +51,8 @@ public class PlayerController : MonoBehaviour
         }
 
         // Initialize variables
-        _playerMoveSpeed = 10;
-        _playerJumpForce = 7;
+        _playerMoveSpeed = 7;
+        _playerJumpForce = 10;
 
         // Tryto get scene handler script and throw an error message if not found
         if(!GameObject.Find("GameManager").TryGetComponent<SceneHandler>(out sceneHandler))
