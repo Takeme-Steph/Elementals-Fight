@@ -25,7 +25,7 @@ public class CameraCTRL : MonoBehaviour
         if(_allPlayersLen > 0)
         {
             playerTransforms = new Transform[_allPlayersLen];
-            PlayerController[] playerControllers = new PlayerController[_allPlayersLen];
+            PlayerManager[] playerManagers = new PlayerManager[_allPlayersLen];
 
             // Loop through all characters, get thier character controllers and identify he main player
             for (int i = 0; i < _allPlayersLen; i++)
@@ -33,11 +33,11 @@ public class CameraCTRL : MonoBehaviour
                 playerTransforms[i] = allPlayers[i].transform; // Store char transforms
                 // Store char controllers
                 // Check if players have controllers
-                if(allPlayers[i].TryGetComponent<PlayerController>(out PlayerController playerController))
+                if(allPlayers[i].TryGetComponent<PlayerManager>(out PlayerManager playerManager))
                 {
-                    playerControllers[i] = playerController;
+                    playerManagers[i] = playerManager;
                     // If main player then store the refrence for future use
-                    if(playerControllers[i]._isMainPlayer)
+                    if(playerManagers[i].isCTRLPlayer)
                     {
                         mainPlayer = allPlayers[i];
                     }

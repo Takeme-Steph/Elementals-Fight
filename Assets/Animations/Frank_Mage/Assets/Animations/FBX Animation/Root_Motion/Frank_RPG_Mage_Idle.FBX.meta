@@ -753,29 +753,12 @@ ModelImporter:
     resampleCurves: 1
     optimizeGameObjects: 0
     removeConstantScaleCurves: 0
-    motionNodeName: <Root Transform>
-    rigImportErrors: 
-    rigImportWarnings: "Copied Avatar Rig Configuration mis-match. Bone length in
-      copied configuration does not match position in animation file:\n\t'thigh_l'
-      : position error = 2.259346 mm\n\t'thigh_r' : position error = 1.289591 mm\n\t'lowerarm_l'
-      : position error = 1.148829 mm\n\t'hand_l' : position error = 9.489797 mm\n\t'hand_r'
-      : position error = 3.702278 mm\n\t'middle_02_r' : position error = 1.204154
-      mm\n\t'ring_02_r' : position error = 1.314624 mm\n"
+    motionNodeName: 
+    rigImportErrors: "Copied Avatar Rig Configuration mis-match. Transform hierarchy
+      does not match:\n\tTransform 'GlobalMove' for human bone 'Hips' not found\n"
+    rigImportWarnings: 
     animationImportErrors: 
-    animationImportWarnings: "\nClip 'Take 001' has import animation warnings that
-      might lower retargeting quality:\nNote: Activate translation DOF on avatar
-      to improve retargeting quality.\n\t'hand_l' has translation animation that
-      will be discarded.\n\t'thumb_03_l' has translation animation that will be discarded.\n\t'index_01_l'
-      has translation animation that will be discarded.\n\t'index_02_l' has translation
-      animation that will be discarded.\n\t'index_03_l' has translation animation
-      that will be discarded.\n\t'middle_01_l' has translation animation that will
-      be discarded.\n\t'middle_02_l' has translation animation that will be discarded.\n\t'middle_03_l'
-      has translation animation that will be discarded.\n\t'ring_01_l' has translation
-      animation that will be discarded.\n\t'ring_02_l' has translation animation
-      that will be discarded.\n\t'ring_03_l' has translation animation that will
-      be discarded.\n\t'pinky_01_l' has translation animation that will be discarded.\n\t'pinky_02_l'
-      has translation animation that will be discarded.\n\t'pinky_03_l' has translation
-      animation that will be discarded.\n"
+    animationImportWarnings: 
     animationRetargetingWarnings: 
     animationDoRetargetingWarnings: 0
     importAnimatedCustomProperties: 0
