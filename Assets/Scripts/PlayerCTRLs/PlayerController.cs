@@ -13,7 +13,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int _playerHP = 100; // The player's health points.
     [SerializeField] private float _playerMoveSpeed; //this is players movement speed.
     [SerializeField] private float _playerJumpForce; //this is players jump force.
-    public bool _isMainPlayer; // flag if this is the player controlled character
+    [SerializeField] private AttackCTRL _attackCTRL; //this is players jump force.
 
     private Rigidbody playerRb; // reference of the players rigid body.
     private PlayerStateManager playerState; // reference of the players rigid body.
@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour
     private SceneHandler sceneHandler; // Reference the scene handler script  
 
     public bool _jump;
+    public bool _attack;
 
     
     private void OnEnable()
@@ -30,6 +31,7 @@ public class PlayerController : MonoBehaviour
         input.MoveEvent += HandleMove;
         input.JumpEvent += HandleJump;
         input.JumpCanceledEvent += HandleCanceledJump;
+        input.AttackEvent += HandleAttack;
     }
     
     private void OnDisable()
@@ -38,6 +40,7 @@ public class PlayerController : MonoBehaviour
         input.MoveEvent -= HandleMove;
         input.JumpEvent -= HandleJump;
         input.JumpCanceledEvent -= HandleCanceledJump; 
+        input.AttackEvent -= HandleAttack;
     }
 
     
@@ -67,11 +70,12 @@ public class PlayerController : MonoBehaviour
     void Update()
     {   
         // Only run if the gameplay is still ative
-        if(!sceneHandler._isGameOver)
+        if(!sceneHandler.isGameOver)
         {
             Move();
             Jump();
             KeepInBounds();
+            Attack(); 
         }
     }
 
@@ -95,8 +99,8 @@ public class PlayerController : MonoBehaviour
             return;
         }
         // Only allow movement on the x axis if within bounds
-        else if(transform.position.x > sceneHandler._safeZoneLeftX && 
-            transform.position.x < sceneHandler._safeZoneRightX)
+        else if(transform.position.x > sceneHandler.safeZoneLeftX && 
+            transform.position.x < sceneHandler.safeZoneRightX)
         {
             playerState.StartWalking(_moveDirection.x); // Set player walk direction
             // move player relative to world space
@@ -115,6 +119,15 @@ public class PlayerController : MonoBehaviour
             playerRb.AddForce(Vector3.up * _playerJumpForce * Time.deltaTime, ForceMode.Impulse);// imediately jump
         }
     }
+    
+    private void Attack()
+    {
+        if(_attack)
+        {
+            _attack = false;
+            _attackCTRL.Attack();  
+        }
+    }
 
     private void HandleMove(Vector2 direction)
     {
@@ -131,23 +144,28 @@ public class PlayerController : MonoBehaviour
         _jump = false;
     }
 
+    private void HandleAttack()
+    {
+        _attack = true;
+    }
+
     // Reset player position if they move out of bounds
     private void KeepInBounds()
     {
-        if (transform.position.x <= sceneHandler._safeZoneLeftX)
+        if (transform.position.x <= sceneHandler.safeZoneLeftX)
         {
-            transform.position = new Vector3(sceneHandler._safeZoneLeftX + sceneHandler._resetBuffer, 0, 
+            transform.position = new Vector3(sceneHandler.safeZoneLeftX + sceneHandler.resetBuffer, 0, 
             transform.position.z);
         }
-        else if (transform.position.x >= sceneHandler._safeZoneRightX)
+        else if (transform.position.x >= sceneHandler.safeZoneRightX)
         {
-            transform.position = new Vector3(sceneHandler._safeZoneRightX - sceneHandler._resetBuffer, 0, 
+            transform.position = new Vector3(sceneHandler.safeZoneRightX - sceneHandler.resetBuffer, 0, 
             transform.position.z);
         }
         else if (transform.position.y < sceneHandler.ground.transform.position.y)
         {
             transform.position = new Vector3(transform.position.x, sceneHandler.ground.transform.position.y
-            + sceneHandler._resetBuffer, transform.position.z);
+            + sceneHandler.resetBuffer, transform.position.z);
         }
         else if (transform.position.z != sceneHandler.ground.transform.position.z)
         {

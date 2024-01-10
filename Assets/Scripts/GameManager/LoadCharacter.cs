@@ -28,26 +28,12 @@ public class LoadCharacter : MonoBehaviour
         // Initialize variables
         _spawnX = _ground.transform.position.x; // Set player spawn x
         _spawnY = _ground.transform.position.y + sceneHandler.groundCollider.bounds.max.y
-                    + sceneHandler._resetBuffer; // Set player spwan y
+                    + sceneHandler.resetBuffer; // Set player spwan y
         _spawnZ = _ground.transform.position.z; // Set player spawn z
 
-        // Get the selected player character data
-        _selectedCharacter = PlayerPrefs.GetInt("selectedCharacter"); // get the selected char index
-        GameObject prefab = charPrefabs[_selectedCharacter]; // Get selected character
-        Vector3 _playerSpawnLocation = new Vector3(_spawnX, _spawnY,_spawnZ); // Set spawn location of the player
-         
-        // instantiate an instance of the selected player character
-        GameObject player = Instantiate(prefab, _playerSpawnLocation, prefab.transform.rotation);
-        player.SetActive(true); // set character instance to active
-        player.tag = "Player"; // Tag the instanciated character as a player.
         
-        // Get player controller and log an error message of not found
-        if(!player.TryGetComponent<PlayerController>(out PlayerController playerController))
-        {
-            Debug.Log(player.name + "has no character controller script");
-        }
-        playerController._isMainPlayer = true; // Set to be the player controlled character
-
+        
+        SpawnPlayer();
         SpawnOpponent();
 
     }
@@ -56,6 +42,35 @@ public class LoadCharacter : MonoBehaviour
     void Update()
     {
         
+    }
+
+    void SpawnPlayer()
+    {
+        Vector3 _playerSpawnLocation = new Vector3(_spawnX, _spawnY,_spawnZ); // Set spawn location of the player
+        // Get the selected player character data
+        _selectedCharacter = PlayerPrefs.GetInt("selectedCharacter"); 
+        GameObject prefab = charPrefabs[_selectedCharacter];
+        // instantiate an instance of the selected player character
+        GameObject player = Instantiate(prefab, _playerSpawnLocation, prefab.transform.rotation);
+        player.SetActive(true); 
+        player.tag = "Player";
+        PlayerController playerController = player.GetComponent<PlayerController>();
+        if (playerController != null)
+        {
+            playerController.enabled = true; // Enable the PlayerController component
+        }
+        else
+        {
+            Debug.LogError(player.name + " has no PlayerController script");
+        }
+        
+        // Get player controller and log an error message of not found
+        if(!player.TryGetComponent<PlayerManager>(out PlayerManager playerManager))
+        {
+            Debug.Log(player.name + "has no character manager script");
+        }
+
+        playerManager.isCTRLPlayer = true;
     }
 
     void SpawnOpponent()
@@ -69,5 +84,22 @@ public class LoadCharacter : MonoBehaviour
         GameObject opponent = Instantiate(prefab, _playerSpawnLocation, Quaternion.Euler(0,-90,0));
         opponent.SetActive(true); // set character instance to active
         opponent.tag = "Player"; // Tag the instanciated character as a opponent.
+        PlayerAutoPilot autoPilot = opponent.GetComponent<PlayerAutoPilot>();
+        if (autoPilot != null)
+        {
+            autoPilot.enabled = true; // Enable the PlayerAutoPilot component
+        }
+        else
+        {
+            Debug.LogError(opponent.name + " has no PlayerAutoPilot script");
+        }
+
+        // Get player controller and log an error message of not found
+        if(!opponent.TryGetComponent<PlayerManager>(out PlayerManager playerManager))
+        {
+            Debug.Log(opponent.name + "has no character controller script");
+        }
+        
+        playerManager.isCTRLPlayer = false;
     }
 }

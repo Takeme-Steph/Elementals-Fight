@@ -4,60 +4,140 @@ using UnityEngine;
 
 public class SceneHandler : MonoBehaviour
 {
-    // Scene data
-    public GameObject ground; // Reference the ground
-    private Vector3 _envRightEdge; // Reference the right edge of the play envirenment.
-    private Vector3 _envLeftEdge; // Reference left edge of the play environment.
-    public float _safeZoneRightX; // The playable right edge(x) of the game enironment.
-    public float _safeZoneLeftX; // The playable left edge(x) of the game environment.
-    public float _bufferX; // Difference between the environment edge and the playable edge.
-    public float _resetBuffer; // amount to substract/ add when player reaches edge of the screen.
-    public Collider groundCollider; // reference the environments ground collider
-    
-    // Flags
-    public bool _isGameOver; // track when game is over
-
+    public GameObject ground;
+    public Collider groundCollider;
+    private Vector3 envRightEdge;
+    private Vector3 envLeftEdge;
+    private float bufferX = 10.0f;
+    public float resetBuffer = 0.1f;
+    public float safeZoneRightX;
+    public float safeZoneLeftX;
+    private Transform[] playerTransforms;
+    public GameObject mainPlayer;
+    public bool isGameOver;
+    private PlayerManager[] playerManagers;
 
     void OnEnable()
     {
-        // Initialize environment variables
-        ground = GameObject.Find("Environment/Ground");
-        // Get the ground's collider and its edges
-        if(ground.TryGetComponent<Collider>(out groundCollider))
-        {
-            _envRightEdge = groundCollider.bounds.max;
-            _envLeftEdge = groundCollider.bounds.min;
-        } 
-        
-    }
-    // Start is called before the first frame update
-    void Start()
-    {
-        // Return if there is no ground in the scene
-        if(!ground)
-        {
-            Debug.Log("Scene has no game object named Ground");
-        }
-        // Initialize variables
-        _bufferX = 10.0f;
-        _resetBuffer = 0.1f;
-        _safeZoneRightX = _envRightEdge.x - _bufferX;
-        _safeZoneLeftX = _envLeftEdge.x + _bufferX;
+        InitializeEnvironment();
     }
 
-    // Update is called once per frame
+    void Start()
+    {
+        if (ground == null)
+        {
+            Debug.LogError("Scene has no game object named Ground");
+            return;
+        }
+
+        InitializeVariables();
+        GetPlayers();
+    }
+
     void Update()
     {
-        
+        // Add your update logic here if needed
+    }
+
+    private void InitializeEnvironment()
+    {
+        ground = GameObject.Find("Environment/Ground");
+
+        if (ground.TryGetComponent<Collider>(out groundCollider))
+        {
+            envRightEdge = groundCollider.bounds.max;
+            envLeftEdge = groundCollider.bounds.min;
+        }
+
+        // Set the safe zones
+        safeZoneRightX = envRightEdge.x - bufferX;
+        safeZoneLeftX = envLeftEdge.x + bufferX;
+    }
+
+    private void InitializeVariables()
+    {
+        bufferX = 10.0f;
+        resetBuffer = 0.1f;
+        safeZoneRightX = envRightEdge.x - bufferX;
+        safeZoneLeftX = envLeftEdge.x + bufferX;
     }
 
     private void GameOver()
     {
-
+        // Your game over logic goes here
     }
 
     public void MatchOver()
     {
+        // Your match over logic goes here
+    }
 
+    private void GetPlayers()
+    {
+        GameObject[] allPlayers = GameObject.FindGameObjectsWithTag("Player");
+
+        if (allPlayers.Length > 0)
+        {
+            InitializePlayerArrays(allPlayers);
+            mainPlayer = IdentifyMainPlayer();
+
+            if (mainPlayer == null)
+            {
+                Debug.LogError("No main player in the scene");
+            }
+        }
+        else
+        {
+            Debug.LogError("No players in the scene");
+        }
+    }
+
+
+    private (Transform[], PlayerManager[]) InitializePlayerArrays(GameObject[] allPlayers)
+    {
+        int numPlayers = allPlayers.Length;
+        playerTransforms = new Transform[numPlayers];
+        playerManagers = new PlayerManager[numPlayers];
+
+        for (int i = 0; i < numPlayers; i++)
+        {
+            playerTransforms[i] = allPlayers[i].transform;
+
+            if (!allPlayers[i].TryGetComponent<PlayerManager>(out PlayerManager playerManager))
+            {
+                HandleMissingPlayerManager(allPlayers[i]);
+                continue;
+            }
+
+            // Store the reference to PlayerManager for future use
+            playerManagers[i] = playerManager;
+        }
+
+        return (playerTransforms, playerManagers);
+    }
+
+
+    private GameObject IdentifyMainPlayer()
+    {
+        for (int i = 0; i < playerManagers.Length; i++)
+        {
+            if (playerManagers[i].isCTRLPlayer)
+            {
+                return playerTransforms[i].gameObject;
+            }
+        }
+
+        Debug.LogError("No main player identified");
+        return null; // or handle the absence of the main player as needed
+    }
+    
+    public GameObject GetMainPlayer()
+    {
+        return mainPlayer;
+    }
+
+    private void HandleMissingPlayerManager(GameObject playerGameObject)
+    {
+        Debug.LogError(playerGameObject.name + " has no PlayerManager script attached");
     }
 }
