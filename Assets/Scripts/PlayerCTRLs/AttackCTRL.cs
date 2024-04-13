@@ -28,12 +28,12 @@ public class AttackCTRL : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Attack();
+        
     }
 
     public void Attack()
     {
-        if(!playerState._isAttacking)
+        if(!playerState.isAttacking)
         {
             playerState.StartAttacking();  
         }

@@ -1,180 +1,161 @@
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM 
-using UnityEngine.InputSystem;
-#endif
 
 public class PlayerController : MonoBehaviour
 {
-    // Player properties
-    [SerializeField] private InputReader input; // Reference the 3rd party input reader
-    [SerializeField] private int _playerHP = 100; // The player's health points.
-    [SerializeField] private float _playerMoveSpeed; //this is players movement speed.
-    [SerializeField] private float _playerJumpForce; //this is players jump force.
-    [SerializeField] private AttackCTRL _attackCTRL; //this is players jump force.
+    [SerializeField] private InputReader inputReader; // Reference the 3rd party input reader
+    [SerializeField] private int playerHP = 100; // The player's health points.
+    [SerializeField] private float playerMoveSpeed = 7f; // Player's movement speed.
+    [SerializeField] private float playerJumpForce = 100f; // Player's jump force.
+    [SerializeField] private AttackCTRL attackController;
 
-    private Rigidbody playerRb; // reference of the players rigid body.
-    private PlayerStateManager playerState; // reference of the players rigid body.
-    
-    private Vector2 _moveDirection; // Vector 2 value of player's movement via the input system
-    private SceneHandler sceneHandler; // Reference the scene handler script  
+    private Rigidbody playerRigidbody; // Reference of the player's rigid body.
+    private PlayerStateManager playerStateManager;
+    private SceneHandler sceneHandler;
 
-    public bool _jump;
-    public bool _attack;
+    private bool isJumping;
+    private bool isAttacking;
+    private bool isGrounded;
+    private bool isMoving;
 
-    
+    private Vector2 moveDirection;
+
     private void OnEnable()
     {
-        // subscribe to events
-        input.MoveEvent += HandleMove;
-        input.JumpEvent += HandleJump;
-        input.JumpCanceledEvent += HandleCanceledJump;
-        input.AttackEvent += HandleAttack;
-    }
-    
-    private void OnDisable()
-    {
-        // Unsubscribe to events
-        input.MoveEvent -= HandleMove;
-        input.JumpEvent -= HandleJump;
-        input.JumpCanceledEvent -= HandleCanceledJump; 
-        input.AttackEvent -= HandleAttack;
+        // Subscribe to events
+        inputReader.MoveEvent += HandleMove;
+        inputReader.JumpEvent += HandleJump;
+        inputReader.JumpCanceledEvent += HandleCanceledJump;
+        inputReader.AttackEvent += HandleAttack;
     }
 
-    
-    // Start is called before the first frame update
+    private void OnDisable()
+    {
+        // Unsubscribe from events
+        inputReader.MoveEvent -= HandleMove;
+        inputReader.JumpEvent -= HandleJump;
+        inputReader.JumpCanceledEvent -= HandleCanceledJump;
+        inputReader.AttackEvent -= HandleAttack;
+    }
+
     void Start()
     {
         // Try to get player rigidbody and throw an error message if not found
-        if(!TryGetComponent<Rigidbody>(out playerRb))
-        {
-            Debug.Log(gameObject.name + "has no rigidbody attached");
-        }
+        if (!TryGetComponent<Rigidbody>(out playerRigidbody))
+            Debug.LogError(gameObject.name + " has no rigidbody attached");
 
         // Initialize variables
-        _playerMoveSpeed = 7;
-        _playerJumpForce = 10;
+        playerMoveSpeed = 7f;
+        playerJumpForce = 100f;
 
-        // Tryto get scene handler script and throw an error message if not found
-        if(!GameObject.Find("GameManager").TryGetComponent<SceneHandler>(out sceneHandler))
+        // Try to get scene handler script and throw an error message if not found
+        if (!GameObject.Find("GameManager").TryGetComponent<SceneHandler>(out sceneHandler))
+            Debug.LogError("No scene handler script found in scene. Game will not run");
+
+        TryGetComponent<PlayerStateManager>(out playerStateManager);
+        if (playerStateManager == null)
         {
-            Debug.Log("No scene handler script found in scene. Game will not run");
+            Debug.LogError(gameObject.name + ": PlayerStateManager component not found.");
         }
-
-        TryGetComponent<PlayerStateManager>(out playerState);  
+        TryGetComponent<AttackCTRL>(out attackController);
     }
 
-    // Update is called once per frame
     void Update()
-    {   
-        // Only run if the gameplay is still ative
-        if(!sceneHandler.isGameOver)
+    {
+        if (!sceneHandler.isGameOver)
         {
             Move();
             Jump();
             KeepInBounds();
-            Attack(); 
+            Attack();
         }
     }
 
+    
     private void OnCollisionEnter(Collision collision)
     {
-        // Set player on ground flag when he player collides with the ground
-        if(collision.gameObject.CompareTag("Ground"))
+        // Set player on ground flag when the player collides with the ground
+        if (collision.gameObject.CompareTag("Ground"))
         {
-           playerState.BeGrounded();
+            // refactor to use raycasting to hadle jump event
+            playerStateManager.BeGrounded();
+            playerStateManager.ResetAnimationFlags();
+            playerStateManager.BeIdle();
         }
-        
     }
 
-    // Move the player on the x axis
+
     private void Move()
     {
-        // Do nothing if player is not moving
-        if(_moveDirection == Vector2.zero)
+        if (moveDirection == Vector2.zero)
         {
-            playerState.StopWalking();
+            playerStateManager.StopWalking();
             return;
         }
-        // Only allow movement on the x axis if within bounds
-        else if(transform.position.x > sceneHandler.safeZoneLeftX && 
+
+        else if (transform.position.x > sceneHandler.safeZoneLeftX &&
             transform.position.x < sceneHandler.safeZoneRightX)
         {
-            playerState.StartWalking(_moveDirection.x); // Set player walk direction
-            // move player relative to world space
-            transform.Translate(new Vector3(_moveDirection.x,0, 0) * (_playerMoveSpeed * Time.deltaTime), 
-            Space.World);
+            playerStateManager.StartWalking(moveDirection.x, playerMoveSpeed);
+            transform.Translate(new Vector3(moveDirection.x, 0, 0) * (playerMoveSpeed * Time.deltaTime), Space.World);
         }
     }
 
-    // Make player jump
     private void Jump()
     {
-        // check if player is on ground and starts jumping
-        if(_jump && playerState._isOnGround)
+        if (isJumping && playerStateManager.isOnGround)
         {
-            playerState.StartJumping();
-            playerRb.AddForce(Vector3.up * _playerJumpForce * Time.deltaTime, ForceMode.Impulse);// imediately jump
+            playerStateManager.StartJumping();
+            playerRigidbody.AddForce(Vector3.up * playerJumpForce * Time.deltaTime, ForceMode.Impulse);
+            isJumping = false;
         }
     }
-    
+
     private void Attack()
     {
-        if(_attack)
+        if (isAttacking)
         {
-            _attack = false;
-            _attackCTRL.Attack();  
+            isAttacking = false;
+            attackController.Attack();
         }
     }
 
     private void HandleMove(Vector2 direction)
     {
-        _moveDirection = direction; // Set the movement direction
+        moveDirection = direction;
     }
 
     private void HandleJump()
     {
-        _jump = true;
+        isJumping = true;
     }
 
     private void HandleCanceledJump()
     {
-        _jump = false;
+        isJumping = false;
     }
 
     private void HandleAttack()
     {
-        _attack = true;
+        isAttacking = true;
     }
 
-    // Reset player position if they move out of bounds
     private void KeepInBounds()
     {
         if (transform.position.x <= sceneHandler.safeZoneLeftX)
         {
-            transform.position = new Vector3(sceneHandler.safeZoneLeftX + sceneHandler.resetBuffer, 0, 
-            transform.position.z);
+            transform.position = new Vector3(sceneHandler.safeZoneLeftX + sceneHandler.resetBuffer, 0, transform.position.z);
         }
         else if (transform.position.x >= sceneHandler.safeZoneRightX)
         {
-            transform.position = new Vector3(sceneHandler.safeZoneRightX - sceneHandler.resetBuffer, 0, 
-            transform.position.z);
+            transform.position = new Vector3(sceneHandler.safeZoneRightX - sceneHandler.resetBuffer, 0, transform.position.z);
         }
         else if (transform.position.y < sceneHandler.ground.transform.position.y)
         {
-            transform.position = new Vector3(transform.position.x, sceneHandler.ground.transform.position.y
-            + sceneHandler.resetBuffer, transform.position.z);
+            transform.position = new Vector3(transform.position.x, sceneHandler.ground.transform.position.y + sceneHandler.resetBuffer, transform.position.z);
         }
         else if (transform.position.z != sceneHandler.ground.transform.position.z)
         {
-            transform.position = new Vector3(transform.position.x, transform.position.y,
-                sceneHandler.ground.transform.position.z);
-        }
-        else
-        {
-            return;
+            transform.position = new Vector3(transform.position.x, transform.position.y, sceneHandler.ground.transform.position.z);
         }
     }
 }
