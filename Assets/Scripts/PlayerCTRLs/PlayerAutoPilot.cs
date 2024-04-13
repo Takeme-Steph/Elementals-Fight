@@ -29,14 +29,12 @@ public class PlayerAutoPilot : MonoBehaviour
             if (mainPlayer != null)
             {
                 // Calculate the distance between this object and the main player
-                float distance = Vector3.Distance(transform.position, mainPlayer.transform.position);
+                //float distance = Vector3.Distance(transform.position, mainPlayer.transform.position);
 
-                // Now you can use the 'distance' variable as needed
-                Debug.Log("Distance to main player: " + distance);
             }
             else
             {
-                Debug.LogError("Main player not found!");
+
             }
         }
     }

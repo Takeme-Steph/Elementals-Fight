@@ -135,7 +135,7 @@ GameObject:
   - component: {fileID: 11725078}
   - component: {fileID: 11725077}
   - component: {fileID: 11725076}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Ground
   m_TagString: Ground
   m_Icon: {fileID: 0}
@@ -595,11 +595,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Ninja
-      objectReference: {fileID: 0}
-    - target: {fileID: 4550845846662401962, guid: 1a66ee4a84b424a4992154e6ed7df798,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3827,11 +3822,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: WarriorPrincess
       objectReference: {fileID: 0}
-    - target: {fileID: 7520245450214503510, guid: f27133a3a75c5164382d16fd4142a839,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 7520245450214991988, guid: f27133a3a75c5164382d16fd4142a839,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -4480,11 +4470,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: EarthMage
       objectReference: {fileID: 0}
-    - target: {fileID: 4022888506824208638, guid: b24a3f21f2f3fa3499991d33e09a1fa1,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4641,7 +4626,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _yOffset: 0
-  _minDistance: 0
 --- !u!1 &1876820906
 GameObject:
   m_ObjectHideFlags: 0

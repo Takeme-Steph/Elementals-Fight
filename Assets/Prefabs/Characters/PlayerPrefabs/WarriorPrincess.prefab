@@ -14,7 +14,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000, guid: 69e6a6ea8e179f445bd248ba46f2a2e9, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 69e6a6ea8e179f445bd248ba46f2a2e9, type: 3}
       propertyPath: m_LocalScale.x
@@ -124,7 +124,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   input: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
-  _attack: 0
 --- !u!114 &5672286302043523518
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -137,11 +136,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd5b87d406ef2a48a5ff613885a636a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _isAttacking: 0
-  _isOnGround: 0
-  _isJumping: 0
-  _isIdle: 0
-  _isWalking: 0
+  isAttacking: 0
+  isOnGround: 0
+  isJumping: 0
+  isIdle: 0
+  isWalking: 0
 --- !u!54 &8187393167516719843
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -150,7 +149,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7520245450214503510}
   serializedVersion: 4
-  m_Mass: 1
+  m_Mass: 2
   m_Drag: 0
   m_AngularDrag: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -202,7 +201,7 @@ Animator:
   m_GameObject: {fileID: 7520245450214503510}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 6db04bc21c5245d428bf2464b5cc5376, type: 3}
-  m_Controller: {fileID: 9100000, guid: 99819933fe3a0664fb71e8c8264c0b1a, type: 2}
+  m_Controller: {fileID: 9100000, guid: 02508ee698d6f7b4abad557c591403f6, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -238,11 +237,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45b6b96e3345f0840bf96ee6278b248b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  input: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
-  _playerHP: 100
-  _playerMoveSpeed: 0
-  _playerJumpForce: 0
-  _jump: 0
+  inputReader: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
+  playerHP: 100
+  playerMoveSpeed: 7
+  playerJumpForce: 50
+  attackController: {fileID: 0}
 --- !u!114 &-6927977144846988723
 MonoBehaviour:
   m_ObjectHideFlags: 0

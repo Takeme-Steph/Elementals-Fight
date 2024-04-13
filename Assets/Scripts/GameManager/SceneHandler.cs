@@ -31,7 +31,7 @@ public class SceneHandler : MonoBehaviour
         }
 
         InitializeVariables();
-        GetPlayers();
+        FindPlayers();
     }
 
     void Update()
@@ -72,7 +72,7 @@ public class SceneHandler : MonoBehaviour
         // Your match over logic goes here
     }
 
-    private void GetPlayers()
+    private void FindPlayers()
     {
         GameObject[] allPlayers = GameObject.FindGameObjectsWithTag("Player");
 
@@ -134,6 +134,11 @@ public class SceneHandler : MonoBehaviour
     public GameObject GetMainPlayer()
     {
         return mainPlayer;
+    }
+
+    public Transform[] GetPlayers()
+    {
+        return playerTransforms;
     }
 
     private void HandleMissingPlayerManager(GameObject playerGameObject)
