@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class SceneHandler : MonoBehaviour
 {
-    public GameObject ground;
+    public GameObject ground { get; private set; }
     public Collider groundCollider;
     private Vector3 envRightEdge;
     private Vector3 envLeftEdge;

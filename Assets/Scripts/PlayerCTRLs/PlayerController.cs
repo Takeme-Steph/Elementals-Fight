@@ -3,7 +3,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private InputReader inputReader; // Reference the 3rd party input reader
-    [SerializeField] private int playerHP = 100; // The player's health points.
+    //[SerializeField] private int playerHP = 100; // The player's health points.
     [SerializeField] private float playerMoveSpeed = 7f; // Player's movement speed.
     [SerializeField] private float playerJumpForce = 100f; // Player's jump force.
     [SerializeField] private AttackCTRL attackController;
@@ -14,8 +14,8 @@ public class PlayerController : MonoBehaviour
 
     private bool isJumping;
     private bool isAttacking;
-    private bool isGrounded;
-    private bool isMoving;
+    //private bool isGrounded;
+    //private bool isMoving;
 
     private Vector2 moveDirection;
 
@@ -26,6 +26,13 @@ public class PlayerController : MonoBehaviour
         inputReader.JumpEvent += HandleJump;
         inputReader.JumpCanceledEvent += HandleCanceledJump;
         inputReader.AttackEvent += HandleAttack;
+
+        TryGetComponent<PlayerStateManager>(out playerStateManager);
+        if (playerStateManager == null)
+        {
+            Debug.LogError(gameObject.name + ": PlayerStateManager component not found.");
+        }
+        TryGetComponent<AttackCTRL>(out attackController);
     }
 
     private void OnDisable()
@@ -51,12 +58,7 @@ public class PlayerController : MonoBehaviour
         if (!GameObject.Find("GameManager").TryGetComponent<SceneHandler>(out sceneHandler))
             Debug.LogError("No scene handler script found in scene. Game will not run");
 
-        TryGetComponent<PlayerStateManager>(out playerStateManager);
-        if (playerStateManager == null)
-        {
-            Debug.LogError(gameObject.name + ": PlayerStateManager component not found.");
-        }
-        TryGetComponent<AttackCTRL>(out attackController);
+        
     }
 
     void Update()
