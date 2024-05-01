@@ -47,6 +47,8 @@ public class PlayerStateManager : MonoBehaviour
     public void StopAttacking()
     {
         isAttacking = false;
+        ResetAnimationFlags();
+        BeIdle();
     }
 
     public void StartJumping()
@@ -88,7 +90,6 @@ public class PlayerStateManager : MonoBehaviour
         if (isWalking)
         {
             ResetAnimationFlags();
-            isWalking = false;
             BeIdle();
         }
     }
