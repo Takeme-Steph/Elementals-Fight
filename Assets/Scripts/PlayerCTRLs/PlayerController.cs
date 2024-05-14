@@ -70,19 +70,22 @@ public class PlayerController : MonoBehaviour
             KeepInBounds();
             Attack();
         }
+
+        // Check when player is on ground
+        if (!playerStateManager.isOnGround && playerRigidbody.velocity.y == 0)
+        {
+            playerStateManager.StopJumping();
+        }
     }
 
     
     private void OnCollisionEnter(Collision collision)
     {
         // Set player on ground flag when the player collides with the ground
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            // refactor to use raycasting to hadle jump event
-            playerStateManager.BeGrounded();
-            playerStateManager.ResetAnimationFlags();
-            playerStateManager.BeIdle();
-        }
+        //if (collision.gameObject.CompareTag("Ground"))
+        //{
+            // refactor to use raycasting to hadle jump event   
+        //}
     }
 
 
@@ -104,7 +107,7 @@ public class PlayerController : MonoBehaviour
 
     private void Jump()
     {
-        if (isJumping && playerStateManager.isOnGround)
+        if (isJumping && playerStateManager.isOnGround & playerRigidbody.velocity.y == 0)
         {
             playerStateManager.StartJumping();
             playerRigidbody.AddForce(Vector3.up * playerJumpForce * Time.deltaTime, ForceMode.Impulse);

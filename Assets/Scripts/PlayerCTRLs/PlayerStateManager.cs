@@ -4,10 +4,11 @@ public class PlayerStateManager : MonoBehaviour
 {
     // Player state flags
     public bool isAttacking;
-    public bool isOnGround; // track when the player is on ground
     public bool isJumping; // track when the player is jumping
     public bool isIdle;
     public bool isWalking;
+
+    public bool isOnGround; // track when the player is on ground
 
     // Animation
     private Animator animator; // Reference to the player's Animator component
@@ -63,7 +64,9 @@ public class PlayerStateManager : MonoBehaviour
 
     public void StopJumping()
     {
-        // isJumping = false;
+        BeGrounded();
+        ResetAnimationFlags();
+        BeIdle();
     }
 
     public void BeIdle()
@@ -82,6 +85,7 @@ public class PlayerStateManager : MonoBehaviour
             animator.SetFloat(animIDDirection, moveDirection); // Set player walk direction
             animator.SetFloat(animIDSpeed, speed);
             animator.SetBool(animIDWalk, true);
+            
         }
     }
 
