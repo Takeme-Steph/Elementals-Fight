@@ -17,6 +17,8 @@ public class SceneHandler : MonoBehaviour
     public bool isGameOver;
     private PlayerManager[] playerManagers;
 
+    public LayerMask groundLayerMask;
+
     void OnEnable()
     {
         InitializeEnvironment();

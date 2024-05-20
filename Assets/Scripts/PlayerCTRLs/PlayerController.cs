@@ -5,17 +5,16 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private InputReader inputReader; // Reference the 3rd party input reader
     //[SerializeField] private int playerHP = 100; // The player's health points.
     [SerializeField] private float playerMoveSpeed = 7f; // Player's movement speed.
-    [SerializeField] private float playerJumpForce = 100f; // Player's jump force.
+    [SerializeField] private float playerJumpForce = 200f; 
     [SerializeField] private AttackCTRL attackController;
 
-    private Rigidbody playerRigidbody; // Reference of the player's rigid body.
+
+    private Rigidbody playerRigidbody;
     private PlayerStateManager playerStateManager;
     private SceneHandler sceneHandler;
 
-    private bool isJumping;
+    private bool jump;
     private bool isAttacking;
-    //private bool isGrounded;
-    //private bool isMoving;
 
     private Vector2 moveDirection;
 
@@ -65,27 +64,24 @@ public class PlayerController : MonoBehaviour
     {
         if (!sceneHandler.isGameOver)
         {
-            Move();
+           
             Jump();
             KeepInBounds();
             Attack();
         }
 
-        // Check when player is on ground
-        if (!playerStateManager.isOnGround && playerRigidbody.velocity.y == 0)
-        {
-            playerStateManager.StopJumping();
-        }
+    }
+
+    void FixedUpdate()
+    {
+        Move();
+        GroundCheck();
     }
 
     
     private void OnCollisionEnter(Collision collision)
     {
-        // Set player on ground flag when the player collides with the ground
-        //if (collision.gameObject.CompareTag("Ground"))
-        //{
-            // refactor to use raycasting to hadle jump event   
-        //}
+        
     }
 
 
@@ -107,12 +103,13 @@ public class PlayerController : MonoBehaviour
 
     private void Jump()
     {
-        if (isJumping && playerStateManager.isOnGround & playerRigidbody.velocity.y == 0)
+        if (jump && playerStateManager.isOnGround)
         {
             playerStateManager.StartJumping();
+            //playerRigidbody.velocity = Vector3.up * playerJumpForce * Time.deltaTime;
             playerRigidbody.AddForce(Vector3.up * playerJumpForce * Time.deltaTime, ForceMode.Impulse);
-            isJumping = false;
         }
+        jump = false;
     }
 
     private void Attack()
@@ -131,12 +128,12 @@ public class PlayerController : MonoBehaviour
 
     private void HandleJump()
     {
-        isJumping = true;
+        jump = true;
     }
 
     private void HandleCanceledJump()
     {
-        isJumping = false;
+        jump = false;
     }
 
     private void HandleAttack()
@@ -144,6 +141,7 @@ public class PlayerController : MonoBehaviour
         isAttacking = true;
     }
 
+    //Keep the player within the safe playable area of the scene
     private void KeepInBounds()
     {
         if (transform.position.x <= sceneHandler.safeZoneLeftX)
@@ -162,5 +160,30 @@ public class PlayerController : MonoBehaviour
         {
             transform.position = new Vector3(transform.position.x, transform.position.y, sceneHandler.ground.transform.position.z);
         }
+    }
+
+    //Check when the player hits the ground
+    private void GroundCheck()
+    {
+        RaycastHit groundHit;
+        //bool hitGround;
+        //Physics.Raycast(boxCollider.bounds.center, transform.TransformDirection(Vector3.down), boxCollider.bounds.extents.y);
+        Physics.Raycast(transform.position, transform.TransformDirection(Vector3.down), out groundHit, 0.1f, sceneHandler.groundLayerMask);
+        Color rayColor;
+        if (groundHit.collider != null)
+        {
+            rayColor = Color.green;
+            if(!playerStateManager.isOnGround) {playerStateManager.BeGrounded();}
+            if (playerStateManager.isJumping) {playerStateManager.StopJumping();}
+            //hitGround = true;
+        }
+        else
+        {
+            rayColor = Color.red;
+            playerStateManager.LeaveGround();
+            //hitGround = false;
+        }
+        Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.down)*0.1f, rayColor);
+        //return hitGround;
     }
 }
