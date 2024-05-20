@@ -48,24 +48,19 @@ public class PlayerStateManager : MonoBehaviour
     public void StopAttacking()
     {
         isAttacking = false;
-        ResetAnimationFlags();
         BeIdle();
     }
 
     public void StartJumping()
     {
         ResetAnimationFlags();
-        isOnGround = false;
-        animator.SetBool(animIDGrounded, false);
         PlayAnimation(animIDJump); // Trigger jump animation
         isJumping = true;
- 
     }
 
     public void StopJumping()
     {
-        BeGrounded();
-        ResetAnimationFlags();
+        isJumping = false;
         BeIdle();
     }
 
@@ -102,6 +97,12 @@ public class PlayerStateManager : MonoBehaviour
     {
         isOnGround = true;
         animator.SetBool(animIDGrounded, true);
+    }
+
+    public void LeaveGround()
+    {
+        isOnGround = false;
+        animator.SetBool(animIDGrounded, false);
     }
 
     private void AssignAnimationIDs()
