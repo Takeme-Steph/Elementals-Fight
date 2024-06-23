@@ -224,7 +224,7 @@ GameObject:
   - component: {fileID: 8808146873452106693}
   - component: {fileID: 1291546214347155177}
   - component: {fileID: 8727583825665799522}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: H_RightHand
   m_TagString: Body
   m_Icon: {fileID: 0}
@@ -646,7 +646,7 @@ GameObject:
   - component: {fileID: 1774515383124380061}
   - component: {fileID: 342219914869295011}
   - component: {fileID: 1630809416106556270}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: H_RightLeg
   m_TagString: Body
   m_Icon: {fileID: 0}
@@ -856,7 +856,7 @@ GameObject:
   - component: {fileID: 7385918035823482046}
   - component: {fileID: 4487368579192008158}
   - component: {fileID: 9003057731514117962}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: H_LeftHand
   m_TagString: Body
   m_Icon: {fileID: 0}
@@ -1066,7 +1066,7 @@ GameObject:
   - component: {fileID: 4434169515326688040}
   - component: {fileID: 5536598780033051462}
   - component: {fileID: 7847585825750785924}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: H_LeftLeg
   m_TagString: Body
   m_Icon: {fileID: 0}
@@ -1183,6 +1183,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a,
         type: 2}
+    - target: {fileID: 1625258788960677049, guid: 6cacedccdb010054591e67f3bde909b5,
+        type: 3}
+      propertyPath: playerJumpForce
+      value: 200
+      objectReference: {fileID: 0}
     - target: {fileID: 3311423737265760273, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
       propertyPath: m_Height
@@ -1347,6 +1352,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   input: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
+  attackColliders:
+  - {fileID: 2587546269393918900}
 --- !u!114 &1886722112088997842
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1360,10 +1367,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isAttacking: 0
-  isOnGround: 0
   isJumping: 0
   isIdle: 0
   isWalking: 0
+  isOnGround: 0
 --- !u!114 &-5721002388842378713
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1377,6 +1384,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isCTRLPlayer: 0
+  playerMaxHealth: 100
+  playerHealth: 100
 --- !u!114 &-4783242635702432794
 MonoBehaviour:
   m_ObjectHideFlags: 0

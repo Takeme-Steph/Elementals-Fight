@@ -5,6 +5,8 @@ using UnityEngine;
 public class PlayerManager : MonoBehaviour
 {
     public bool isCTRLPlayer; // flag if this is a player controlled character
+    public float playerMaxHealth = 100;
+    public float playerHealth = 100;
     // Start is called before the first frame update
     void Start()
     {
@@ -15,5 +17,10 @@ public class PlayerManager : MonoBehaviour
     void Update()
     {
         
+    }
+
+    public void TakeDamage(float damage)
+    {
+        playerHealth -= damage;
     }
 }

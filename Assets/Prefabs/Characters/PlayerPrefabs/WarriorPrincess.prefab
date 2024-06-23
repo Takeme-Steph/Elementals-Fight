@@ -541,7 +541,7 @@ GameObject:
   - component: {fileID: 2185476607143500063}
   - component: {fileID: 7514508725634980434}
   - component: {fileID: 7608841337171958508}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: H_LeftHand
   m_TagString: Body
   m_Icon: {fileID: 0}
@@ -751,7 +751,7 @@ GameObject:
   - component: {fileID: 3641914963583191437}
   - component: {fileID: 7293980575077544025}
   - component: {fileID: 9189328137885704477}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: H_LeftLeg
   m_TagString: Body
   m_Icon: {fileID: 0}
@@ -961,7 +961,7 @@ GameObject:
   - component: {fileID: 6994122482043156215}
   - component: {fileID: 3597621869407930541}
   - component: {fileID: 1956770164348515141}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: H_RightHand
   m_TagString: Body
   m_Icon: {fileID: 0}
@@ -1066,7 +1066,7 @@ GameObject:
   - component: {fileID: 9025694358834854162}
   - component: {fileID: 1236160933548006375}
   - component: {fileID: 2396140243085766728}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: H_RightLeg
   m_TagString: Body
   m_Icon: {fileID: 0}
@@ -1327,6 +1327,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   input: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
+  attackColliders:
+  - {fileID: 7793889914479825264}
 --- !u!114 &5672286302043523518
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1340,10 +1342,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isAttacking: 0
-  isOnGround: 0
   isJumping: 0
   isIdle: 0
   isWalking: 0
+  isOnGround: 0
 --- !u!54 &8187393167516719843
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1428,6 +1430,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isCTRLPlayer: 0
+  playerMaxHealth: 100
+  playerHealth: 100
 --- !u!114 &-6092717924412027851
 MonoBehaviour:
   m_ObjectHideFlags: 0

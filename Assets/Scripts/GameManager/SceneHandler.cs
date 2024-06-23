@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SceneHandler : MonoBehaviour
 {
@@ -14,10 +15,14 @@ public class SceneHandler : MonoBehaviour
     public float safeZoneLeftX;
     private Transform[] playerTransforms;
     public GameObject mainPlayer;
+    public GameObject oppPlayer;
     public bool isGameOver;
     private PlayerManager[] playerManagers;
 
     public LayerMask groundLayerMask;
+
+    public Slider playerHealthBar;
+    public Slider oppHealthBar;
 
     void OnEnable()
     {
@@ -34,10 +39,12 @@ public class SceneHandler : MonoBehaviour
 
         InitializeVariables();
         FindPlayers();
+        UpdateHealthBars();
     }
 
     void Update()
     {
+        UpdateHealthBars();
         // Add your update logic here if needed
     }
 
@@ -82,6 +89,7 @@ public class SceneHandler : MonoBehaviour
         {
             InitializePlayerArrays(allPlayers);
             mainPlayer = IdentifyMainPlayer();
+            oppPlayer = IdentifyOppPlayer();
 
             if (mainPlayer == null)
             {
@@ -132,6 +140,20 @@ public class SceneHandler : MonoBehaviour
         Debug.LogError("No main player identified");
         return null; // or handle the absence of the main player as needed
     }
+
+    private GameObject IdentifyOppPlayer()
+    {
+        for (int i = 0; i < playerManagers.Length; i++)
+        {
+            if (!playerManagers[i].isCTRLPlayer)
+            {
+                return playerTransforms[i].gameObject;
+            }
+        }
+
+        Debug.LogError("No main player identified");
+        return null; // or handle the absence of the main player as needed
+    }
     
     public GameObject GetMainPlayer()
     {
@@ -146,5 +168,15 @@ public class SceneHandler : MonoBehaviour
     private void HandleMissingPlayerManager(GameObject playerGameObject)
     {
         Debug.LogError(playerGameObject.name + " has no PlayerManager script attached");
+    }
+
+    public void UpdateHealthBars()
+    {
+        mainPlayer.TryGetComponent<PlayerManager>(out PlayerManager mainPlayerManager);
+        oppPlayer.TryGetComponent<PlayerManager>(out PlayerManager oppPlayerManager);
+
+        playerHealthBar.value = mainPlayerManager.playerHealth/mainPlayerManager.playerMaxHealth;
+        oppHealthBar.value = oppPlayerManager.playerHealth/oppPlayerManager.playerMaxHealth;
+
     }
 }
