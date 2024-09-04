@@ -17,6 +17,7 @@ public class SceneHandler : MonoBehaviour
     public GameObject mainPlayer;
     public GameObject oppPlayer;
     public bool isGameOver;
+    public bool activeMatch;
     private PlayerManager[] playerManagers;
 
     public LayerMask groundLayerMask;
@@ -40,6 +41,7 @@ public class SceneHandler : MonoBehaviour
         InitializeVariables();
         FindPlayers();
         UpdateHealthBars();
+        activeMatch = true;
     }
 
     void Update()

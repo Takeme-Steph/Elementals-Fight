@@ -6,7 +6,7 @@ public class AttackCTRL : MonoBehaviour
 {
     [SerializeField] private InputReader input; // Reference the 3rd party input reader
     
-    private PlayerStateManager playerState; // reference of the players rigid body.
+    private PlayerStateManager playerState; 
     public Collider[] attackColliders;// colletion of the player's attack colliders
  
 
@@ -52,12 +52,13 @@ public class AttackCTRL : MonoBehaviour
                 float damage = 10;
 
                 parentObject.SendMessage("TakeDamage", damage);
+                break;
             }
         }
     }
 
 
-    // Function to find the topmost parent of a child object
+    // Function to find the topmost parent of a child object (move to util file?)
     public GameObject FindTopmostParent(GameObject child)
     {
         // If the parent is null, then this is the topmost parent
