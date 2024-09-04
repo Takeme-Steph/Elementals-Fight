@@ -7,6 +7,8 @@ public class PlayerStateManager : MonoBehaviour
     public bool isJumping; // track when the player is jumping
     public bool isIdle;
     public bool isWalking;
+    public bool isInvincible;
+    public bool isHit;
 
     public bool isOnGround; // track when the player is on ground
 
@@ -22,6 +24,7 @@ public class PlayerStateManager : MonoBehaviour
     private int animIDGrounded;
     private int animIDDirection;
     private int animIDSpeed;
+    private int animIDHit;
 
     void OnEnable()
     {
@@ -48,6 +51,18 @@ public class PlayerStateManager : MonoBehaviour
     public void StopAttacking()
     {
         isAttacking = false;
+        BeIdle();
+    }
+
+    public void BeHit()
+    {
+        isInvincible = true;
+        PlayAnimation(animIDHit);
+    }
+
+    public void EndHit()
+    {
+        isInvincible = false;
         BeIdle();
     }
 
@@ -114,6 +129,7 @@ public class PlayerStateManager : MonoBehaviour
         animIDDirection = Animator.StringToHash("Direction");
         animIDAttack = Animator.StringToHash("Attack");
         animIDSpeed = Animator.StringToHash("Speed");
+        animIDHit = Animator.StringToHash("Hit");
     }
 
     private void PlayAnimation(int animationID)

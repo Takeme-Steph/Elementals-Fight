@@ -51,7 +51,7 @@ public class PlayerController : MonoBehaviour
 
         // Initialize variables
         playerMoveSpeed = 7f;
-        playerJumpForce = 100f;
+        playerJumpForce = 200f;
 
         // Try to get scene handler script and throw an error message if not found
         if (!GameObject.Find("GameManager").TryGetComponent<SceneHandler>(out sceneHandler))
@@ -62,7 +62,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (!sceneHandler.isGameOver)
+        if (!sceneHandler.isGameOver && sceneHandler.activeMatch)
         {
            
             Jump();
