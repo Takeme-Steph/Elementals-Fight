@@ -51,7 +51,7 @@ public class AttackCTRL : MonoBehaviour
                 Debug.Log(c.name);
                 float damage = 10;
 
-                parentObject.SendMessage("TakeDamage", damage);
+                parentObject.SendMessage("Hit", damage);
                 break;
             }
         }

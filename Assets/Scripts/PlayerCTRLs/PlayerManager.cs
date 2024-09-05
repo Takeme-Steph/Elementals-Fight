@@ -10,6 +10,8 @@ public class PlayerManager : MonoBehaviour
     private PlayerStateManager playerState;
     public int matchWinCount;
     private SceneHandler sceneHandler;
+    private bool gotHit;
+    private float hitPoints;
     // Start is called before the first frame update
     void Start()
     {
@@ -25,12 +27,19 @@ public class PlayerManager : MonoBehaviour
         
     }
 
-    public void TakeDamage(float damage)
+    void LateUpdate()
     {
-        if(!playerState.isInvincible)
+        TakeDamage(hitPoints);
+    }
+
+    private void TakeDamage(float damage)
+    {
+        if(!playerState.isInvincible && gotHit)
         {
             playerState.BeHit();
             playerHealth -= damage;
+            gotHit = false;
+            hitPoints = 0;
 
             if(playerHealth <= 0)
             {
@@ -38,6 +47,10 @@ public class PlayerManager : MonoBehaviour
             }
         }
 
-        
+    }
+    public void Hit(float damage)
+    {
+        gotHit = true;
+        hitPoints = damage;
     }
 }

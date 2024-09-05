@@ -345,8 +345,8 @@ Transform:
   m_GameObject: {fileID: 2347257368867051360}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7949197, y: 0.119910605, z: 0.27390212, w: -0.5279221}
-  m_LocalPosition: {x: 0.64, y: 0.059, z: 0.381}
-  m_LocalScale: {x: 1.3127506, y: 4.378, z: 0.45213202}
+  m_LocalPosition: {x: 0.593, y: 0.138, z: 0.133}
+  m_LocalScale: {x: 1.3127506, y: 4.685883, z: 0.5276381}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5293097662848943360}
@@ -1388,6 +1388,7 @@ MonoBehaviour:
   isCTRLPlayer: 0
   playerMaxHealth: 100
   playerHealth: 100
+  matchWinCount: 0
 --- !u!114 &-4783242635702432794
 MonoBehaviour:
   m_ObjectHideFlags: 0
