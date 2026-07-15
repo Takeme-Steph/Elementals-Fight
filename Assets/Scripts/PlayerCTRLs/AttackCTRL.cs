@@ -4,59 +4,30 @@ using UnityEngine;
 
 public class AttackCTRL : MonoBehaviour
 {
-    [SerializeField] private InputReader input; // Reference the 3rd party input reader
-    
-    private PlayerStateManager playerState; 
-    public Collider[] attackColliders;// colletion of the player's attack colliders
- 
+    public Collider[] attackColliders; // collection of the player's attack colliders
 
-    private void OnEnable()
-    {
-       
-    }
-    
-    private void OnDisable()
-    {
-        
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        TryGetComponent<PlayerStateManager>(out playerState);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    //Handle player attack
+    // Called by PlayerStateMachine when it enters the Attacking state -
+    // the state machine already guarantees this is only called when an
+    // attack is actually allowed to happen, so no guard needed here.
     public void Attack()
     {
-        if(!playerState.isAttacking)
-        {
-            // initiate attack state and get hitboxes that overlap with the attack hitboxes
-            playerState.StartAttacking(); 
-            Collider col = attackColliders[0];
-            Collider[] cols = Physics.OverlapBox(col.bounds.center,col.bounds.extents,col.transform.rotation,
-                LayerMask.GetMask("Hitbox"));
-            
-            //ignore player hitboxes and deal damage to opponent
-            foreach (Collider c in cols)
-            {
-                GameObject parentObject = FindTopmostParent(c.transform.gameObject);
-                if(parentObject.transform == transform) {continue;}
-                Debug.Log(c.name);
-                float damage = 10;
+        // initiate attack and get hitboxes that overlap with the attack hitboxes
+        Collider col = attackColliders[0];
+        Collider[] cols = Physics.OverlapBox(col.bounds.center, col.bounds.extents, col.transform.rotation,
+            LayerMask.GetMask("Hitbox"));
 
-                parentObject.SendMessage("Hit", damage);
-                break;
-            }
+        //ignore player hitboxes and deal damage to opponent
+        foreach (Collider c in cols)
+        {
+            GameObject parentObject = FindTopmostParent(c.transform.gameObject);
+            if (parentObject.transform == transform) { continue; }
+            Debug.Log(c.name);
+            float damage = 10;
+
+            parentObject.SendMessage("Hit", damage);
+            break;
         }
     }
-
 
     // Function to find the topmost parent of a child object (move to util file?)
     public GameObject FindTopmostParent(GameObject child)
@@ -72,6 +43,4 @@ public class AttackCTRL : MonoBehaviour
             return FindTopmostParent(child.transform.parent.gameObject);
         }
     }
-
 }
-

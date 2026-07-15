@@ -3,14 +3,11 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private InputReader inputReader; // Reference the 3rd party input reader
-    //[SerializeField] private int playerHP = 100; // The player's health points.
     [SerializeField] private float playerMoveSpeed = 7f; // Player's movement speed.
-    [SerializeField] private float playerJumpForce = 200f; 
-    [SerializeField] private AttackCTRL attackController;
-
+    [SerializeField] private float playerJumpForce = 200f;
 
     private Rigidbody playerRigidbody;
-    private PlayerStateManager playerStateManager;
+    private PlayerStateMachine stateMachine;
     private SceneHandler sceneHandler;
 
     private bool jump;
@@ -26,12 +23,11 @@ public class PlayerController : MonoBehaviour
         inputReader.JumpCanceledEvent += HandleCanceledJump;
         inputReader.AttackEvent += HandleAttack;
 
-        TryGetComponent<PlayerStateManager>(out playerStateManager);
-        if (playerStateManager == null)
+        TryGetComponent<PlayerStateMachine>(out stateMachine);
+        if (stateMachine == null)
         {
-            Debug.LogError(gameObject.name + ": PlayerStateManager component not found.");
+            Debug.LogError(gameObject.name + ": PlayerStateMachine component not found.");
         }
-        TryGetComponent<AttackCTRL>(out attackController);
     }
 
     private void OnDisable()
@@ -49,27 +45,21 @@ public class PlayerController : MonoBehaviour
         if (!TryGetComponent<Rigidbody>(out playerRigidbody))
             Debug.LogError(gameObject.name + " has no rigidbody attached");
 
-        // Initialize variables
-        playerMoveSpeed = 7f;
-        playerJumpForce = 200f;
-
         // Try to get scene handler script and throw an error message if not found
         if (!GameObject.Find("GameManager").TryGetComponent<SceneHandler>(out sceneHandler))
             Debug.LogError("No scene handler script found in scene. Game will not run");
-
-        
     }
 
     void Update()
     {
+        if (sceneHandler == null) return; // guard against the Find() above failing
+
         if (!sceneHandler.isGameOver && sceneHandler.activeMatch)
         {
-           
             Jump();
             KeepInBounds();
             Attack();
         }
-
     }
 
     void FixedUpdate()
@@ -78,36 +68,37 @@ public class PlayerController : MonoBehaviour
         GroundCheck();
     }
 
-    
     private void OnCollisionEnter(Collision collision)
     {
-        
-    }
 
+    }
 
     private void Move()
     {
         if (moveDirection == Vector2.zero)
         {
-            playerStateManager.StopWalking();
+            stateMachine.Move(Vector2.zero, 0f);
             return;
         }
 
-        else if (transform.position.x > sceneHandler.safeZoneLeftX &&
+        if (!stateMachine.CanMove) return;
+
+        if (transform.position.x > sceneHandler.safeZoneLeftX &&
             transform.position.x < sceneHandler.safeZoneRightX)
         {
-            playerStateManager.StartWalking(moveDirection.x, playerMoveSpeed);
+            stateMachine.Move(moveDirection, playerMoveSpeed);
             transform.Translate(new Vector3(moveDirection.x, 0, 0) * (playerMoveSpeed * Time.deltaTime), Space.World);
         }
     }
 
     private void Jump()
     {
-        if (jump && playerStateManager.isOnGround)
+        if (jump && stateMachine.CanJump)
         {
-            playerStateManager.StartJumping();
-            //playerRigidbody.velocity = Vector3.up * playerJumpForce * Time.deltaTime;
-            playerRigidbody.AddForce(Vector3.up * playerJumpForce * Time.deltaTime, ForceMode.Impulse);
+            stateMachine.RequestJump();
+            // Fixed: ForceMode.Impulse already represents an instantaneous change,
+            // multiplying by Time.deltaTime was making jump height frame-rate dependent.
+            playerRigidbody.AddForce(Vector3.up * playerJumpForce, ForceMode.Impulse);
         }
         jump = false;
     }
@@ -117,7 +108,10 @@ public class PlayerController : MonoBehaviour
         if (isAttacking)
         {
             isAttacking = false;
-            attackController.Attack();
+            if (stateMachine.CanAttack)
+            {
+                stateMachine.RequestAttack();
+            }
         }
     }
 
@@ -166,24 +160,18 @@ public class PlayerController : MonoBehaviour
     private void GroundCheck()
     {
         RaycastHit groundHit;
-        //bool hitGround;
-        //Physics.Raycast(boxCollider.bounds.center, transform.TransformDirection(Vector3.down), boxCollider.bounds.extents.y);
         Physics.Raycast(transform.position, transform.TransformDirection(Vector3.down), out groundHit, 0.1f, sceneHandler.groundLayerMask);
         Color rayColor;
         if (groundHit.collider != null)
         {
             rayColor = Color.green;
-            if(!playerStateManager.isOnGround) {playerStateManager.BeGrounded();}
-            if (playerStateManager.isJumping) {playerStateManager.StopJumping();}
-            //hitGround = true;
+            if (!stateMachine.IsOnGround) stateMachine.SetGrounded(true);
         }
         else
         {
             rayColor = Color.red;
-            playerStateManager.LeaveGround();
-            //hitGround = false;
+            if (stateMachine.IsOnGround) stateMachine.SetGrounded(false);
         }
-        Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.down)*0.1f, rayColor);
-        //return hitGround;
+        Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.down) * 0.1f, rayColor);
     }
 }
