@@ -7,24 +7,17 @@ public class PlayerManager : MonoBehaviour
     public bool isCTRLPlayer; // flag if this is a player controlled character
     public float playerMaxHealth = 100;
     public float playerHealth = 100;
-    private PlayerStateManager playerState;
+    private PlayerStateMachine stateMachine;
     public int matchWinCount;
     private SceneHandler sceneHandler;
     private bool gotHit;
     private float hitPoints;
+
     // Start is called before the first frame update
     void Start()
     {
-        TryGetComponent<PlayerStateManager>(out playerState);
-
+        TryGetComponent<PlayerStateMachine>(out stateMachine);
         TryGetComponent<SceneHandler>(out sceneHandler);
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     void LateUpdate()
@@ -34,20 +27,20 @@ public class PlayerManager : MonoBehaviour
 
     private void TakeDamage(float damage)
     {
-        if(!playerState.isInvincible && gotHit)
+        if (!stateMachine.IsInvincible && gotHit)
         {
-            playerState.BeHit();
+            stateMachine.EnterHitstun();
             playerHealth -= damage;
             gotHit = false;
             hitPoints = 0;
 
-            if(playerHealth <= 0)
+            if (playerHealth <= 0)
             {
                 sceneHandler.MatchOver();
             }
         }
-
     }
+
     public void Hit(float damage)
     {
         gotHit = true;

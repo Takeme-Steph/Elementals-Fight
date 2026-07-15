@@ -52,5 +52,5 @@
         "Temp/": true
     },
     "dotnet.preferCSharpExtension": true,
-    "dotnet.defaultSolution": "Elementals-Fight.sln"
+    "dotnet.defaultSolution": "Elementals-Fight.slnx"
 }

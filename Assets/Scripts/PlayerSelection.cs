@@ -1,79 +1,132 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class PlayerSelection : MonoBehaviour
 {
-    public GameObject[] characters; // reference characters to be picked from
-    public GameObject[] opponents; // reference characters to be picked from
-    private int _selectedPlayer = 0; // store selected character index
-    private int _selectedOpponent = 1; // store selected opponent index
-    
-    // ToDO Update to use an enum
-    private readonly int FightScene = 1; // store fight scene index
-    
-    // Start is called before the first frame update
-    void Start()
+    public GameObject[] characters;
+    public GameObject[] opponents;
+
+    private int _selectedPlayer = 0;
+    private int _selectedOpponent = 1;
+
+    private const int CharacterSelectScene = 0;
+    private const int FightScene = 1;
+
+    private const string SelectedCharacterKey = "selectedCharacter";
+    private const string SelectedOpponentKey = "selectedOpponent";
+
+    private void Start()
     {
-        
+        InitializeSelection();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    // Deactivate current selected player and activate next player
     public void NextPlayer()
     {
-        characters[_selectedPlayer].SetActive(false); // Deactivate currently selected character
-        // Update selected character to the next charater,and run in a loop
-        _selectedPlayer = (_selectedPlayer+1) % characters.Length; 
-        characters[_selectedPlayer].SetActive(true); // Active newly selected character
+        SelectNext(ref _selectedPlayer, characters);
     }
 
-    // Deactivate current selected player and activate previous player
     public void PreviousPlayer()
     {
-        characters[_selectedPlayer].SetActive(false); // Deactivate currently selected character
-        // Update selected character to the previous charater,and run in a loop
-        _selectedPlayer --;
-        if(_selectedPlayer < 0)
-        {
-            _selectedPlayer += characters.Length;
-        }
-        characters[_selectedPlayer].SetActive(true); // Active newly selected character
+        SelectPrevious(ref _selectedPlayer, characters);
     }
 
- // Deactivate current selected player and activate next player
     public void NextOpponent()
     {
-        opponents[_selectedOpponent].SetActive(false); // Deactivate currently selected character
-        // Update selected character to the next charater,and run in a loop
-        _selectedOpponent = (_selectedOpponent+1) % characters.Length; 
-        opponents[_selectedOpponent].SetActive(true); // Active newly selected character
+        SelectNext(ref _selectedOpponent, opponents);
     }
 
-    // Deactivate current selected player and activate previous player
     public void PreviousOpponent()
     {
-        opponents[_selectedOpponent].SetActive(false); // Deactivate currently selected character
-        // Update selected character to the previous charater,and run in a loop
-        _selectedOpponent --;
-        if(_selectedOpponent < 0)
-        {
-            _selectedOpponent += characters.Length;
-        }
-        opponents[_selectedOpponent].SetActive(true); // Active newly selected character
+        SelectPrevious(ref _selectedOpponent, opponents);
     }
 
-    // Load the next (fight) scene
     public void StartGame()
     {
-        PlayerPrefs.SetInt("selectedCharacter",_selectedPlayer); // Store the selected character index 
-        PlayerPrefs.SetInt("selectedOpponent",_selectedOpponent); // Store the selected character index 
-        SceneManager.LoadScene(FightScene, LoadSceneMode.Single); // Load the next scene and close current scene
+        if (!IsSelectionValid(characters, _selectedPlayer) || !IsSelectionValid(opponents, _selectedOpponent))
+        {
+            Debug.LogWarning("Unable to start the fight because the current selection is invalid.");
+            return;
+        }
+
+        PlayerPrefs.SetInt(SelectedCharacterKey, _selectedPlayer);
+        PlayerPrefs.SetInt(SelectedOpponentKey, _selectedOpponent);
+        PlayerPrefs.Save();
+        SceneManager.LoadScene(FightScene, LoadSceneMode.Single);
+    }
+
+    public void ReturnToSelection()
+    {
+        SceneManager.LoadScene(CharacterSelectScene, LoadSceneMode.Single);
+    }
+
+    private void InitializeSelection()
+    {
+        _selectedPlayer = GetValidSelection(PlayerPrefs.GetInt(SelectedCharacterKey, _selectedPlayer), characters);
+        _selectedOpponent = GetValidSelection(PlayerPrefs.GetInt(SelectedOpponentKey, _selectedOpponent), opponents);
+
+        ShowSelection(characters, _selectedPlayer);
+        ShowSelection(opponents, _selectedOpponent);
+    }
+
+    private void SelectNext(ref int currentIndex, GameObject[] options)
+    {
+        if (!IsSelectionValid(options, currentIndex))
+        {
+            return;
+        }
+
+        SetActiveOption(options, currentIndex, false);
+        currentIndex = (currentIndex + 1) % options.Length;
+        SetActiveOption(options, currentIndex, true);
+    }
+
+    private void SelectPrevious(ref int currentIndex, GameObject[] options)
+    {
+        if (!IsSelectionValid(options, currentIndex))
+        {
+            return;
+        }
+
+        SetActiveOption(options, currentIndex, false);
+        currentIndex = (currentIndex - 1 + options.Length) % options.Length;
+        SetActiveOption(options, currentIndex, true);
+    }
+
+    private void ShowSelection(GameObject[] options, int selectedIndex)
+    {
+        if (!IsSelectionValid(options, selectedIndex))
+        {
+            return;
+        }
+
+        for (int i = 0; i < options.Length; i++)
+        {
+            SetActiveOption(options, i, i == selectedIndex);
+        }
+    }
+
+    private bool IsSelectionValid(GameObject[] options, int index)
+    {
+        return options != null && options.Length > 0 && index >= 0 && index < options.Length;
+    }
+
+    private int GetValidSelection(int storedIndex, GameObject[] options)
+    {
+        if (options == null || options.Length == 0)
+        {
+            return 0;
+        }
+
+        return Mathf.Clamp(storedIndex, 0, options.Length - 1);
+    }
+
+    private void SetActiveOption(GameObject[] options, int index, bool isActive)
+    {
+        if (options == null || index < 0 || index >= options.Length || options[index] == null)
+        {
+            return;
+        }
+
+        options[index].SetActive(isActive);
     }
 }
