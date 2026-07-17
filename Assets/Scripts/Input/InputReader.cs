@@ -14,6 +14,8 @@ public class InputReader : ScriptableObject, PlayerInput.IGroundActions, PlayerI
     public event Action JumpEvent = delegate { };
     public event Action JumpCanceledEvent = delegate { };
     public event Action AttackEvent = delegate { };
+    public event Action<bool> BlockEvent = delegate { };
+
 
     // UI Events
     public event Action PauseEvent = delegate { };
@@ -50,7 +52,16 @@ public class InputReader : ScriptableObject, PlayerInput.IGroundActions, PlayerI
         if (context.phase == InputActionPhase.Started)
 			AttackEvent.Invoke();
     }
-    public void OnPause(InputAction.CallbackContext context)
+    public void OnBlock(InputAction.CallbackContext context)
+    {
+        if (context.phase == InputActionPhase.Started)
+			BlockEvent.Invoke(true);
+
+		if (context.phase == InputActionPhase.Canceled)
+			BlockEvent.Invoke(false);
+    }
+    
+public void OnPause(InputAction.CallbackContext context)
     {
         if (context.phase == InputActionPhase.Performed)
 			PauseEvent.Invoke();
