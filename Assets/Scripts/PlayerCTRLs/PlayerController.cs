@@ -22,6 +22,8 @@ public class PlayerController : MonoBehaviour
         inputReader.JumpEvent += HandleJump;
         inputReader.JumpCanceledEvent += HandleCanceledJump;
         inputReader.AttackEvent += HandleAttack;
+        inputReader.BlockEvent += HandleBlock;
+
 
         TryGetComponent<PlayerStateMachine>(out stateMachine);
         if (stateMachine == null)
@@ -37,6 +39,8 @@ public class PlayerController : MonoBehaviour
         inputReader.JumpEvent -= HandleJump;
         inputReader.JumpCanceledEvent -= HandleCanceledJump;
         inputReader.AttackEvent -= HandleAttack;
+        inputReader.BlockEvent -= HandleBlock;
+
     }
 
     void Start()
@@ -134,6 +138,12 @@ public class PlayerController : MonoBehaviour
     {
         isAttacking = true;
     }
+
+    private void HandleBlock(bool isHeld)
+    {
+        stateMachine.RequestBlock(isHeld);
+    }
+
 
     //Keep the player within the safe playable area of the scene
     private void KeepInBounds()
