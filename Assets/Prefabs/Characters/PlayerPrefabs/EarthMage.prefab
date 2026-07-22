@@ -1263,7 +1263,7 @@ PrefabInstance:
     - target: {fileID: 1625258788960677049, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
       propertyPath: playerJumpForce
-      value: 200
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 3311423737265760273, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
@@ -1290,6 +1290,11 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 02508ee698d6f7b4abad557c591403f6, type: 2}
+    - target: {fileID: 7172979919335303201, guid: 6cacedccdb010054591e67f3bde909b5,
+        type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7436740926910661264, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1409,6 +1414,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 7612065799851564620}
+    - targetCorrespondingSourceObject: {fileID: 6778421645541079769, guid: 6cacedccdb010054591e67f3bde909b5,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -6598562627602466073}
   m_SourcePrefab: {fileID: 100100000, guid: 6cacedccdb010054591e67f3bde909b5, type: 3}
 --- !u!1 &4022888506824208638 stripped
 GameObject:
@@ -1430,6 +1439,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   attackColliders:
   - {fileID: 2587546269393918900}
+  lightAttackDamage: 10
+  heavyAttackDamage: 20
 --- !u!114 &-5721002388842378713
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1492,6 +1503,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStateMachine
   attackController: {fileID: -3394567897538540431}
+--- !u!114 &-6598562627602466073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4022888506824208638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c070bb89fb216af43ae5cf00caa00431, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDetector
+  rayOriginOffset: 0.15
+  rayDistance: 0.3
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!4 &5102722360222662652 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3392727473145443803, guid: 6cacedccdb010054591e67f3bde909b5,

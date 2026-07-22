@@ -5,6 +5,20 @@ using UnityEngine.UI;
 
 public class SceneHandler : MonoBehaviour
 {
+    // Fixed: PlayerController used to look this up via
+    // GameObject.Find("GameManager").TryGetComponent<SceneHandler>() in its
+    // own Start(). That's a name-based lookup racing against script execution
+    // order - if a player's Start() ran before this object was fully ready
+    // (or briefly inactive during scene setup), the lookup silently failed
+    // and left sceneHandler null forever, crashing GroundCheck() every
+    // FixedUpdate. Awake() is guaranteed to run before any other object's
+    // Start(), so a singleton set here is reliable regardless of timing.
+    public static SceneHandler Instance { get; private set; }
+
+    void Awake()
+    {
+        Instance = this;
+    }
     public GameObject ground { get; private set; }
     public Collider groundCollider;
     private Vector3 envRightEdge;

@@ -22,8 +22,9 @@ public class JumpingState : PlayerState
         Machine.Animator.SetFloat(Machine.AnimIDDirection, direction.x);
     }
 
-    public override void OnAttackPressed()
+    public override void OnAttackPressed(bool isHeavy)
     {
+        Machine.Attacking.PendingHeavy = isHeavy;
         Machine.ChangeState(Machine.Attacking);
     }
 

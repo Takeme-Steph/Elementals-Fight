@@ -29,7 +29,7 @@ public abstract class PlayerState
     public virtual void OnMove(Vector2 direction, float speed) { }
     public virtual void OnJumpPressed() { }
     public virtual void OnJumpCanceled() { }
-    public virtual void OnAttackPressed() { }
+    public virtual void OnAttackPressed(bool isHeavy) { }
     public virtual void OnBlockPressed(bool isHeld) { }
     public virtual void OnGrounded() { }
     public virtual void OnLeftGround() { }
