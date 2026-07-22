@@ -84,6 +84,10 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 02508ee698d6f7b4abad557c591403f6, type: 2}
+    - target: {fileID: 9500000, guid: dcb1dc08d2cc24c408500eb8f881749f, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -116,6 +120,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 7264267650156578432}
+    - targetCorrespondingSourceObject: {fileID: 100060, guid: dcb1dc08d2cc24c408500eb8f881749f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 824475451801987599}
   m_SourcePrefab: {fileID: 100100000, guid: dcb1dc08d2cc24c408500eb8f881749f, type: 3}
 --- !u!1 &4550845846662401962 stripped
 GameObject:
@@ -136,6 +144,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackColliders: []
+  lightAttackDamage: 10
+  heavyAttackDamage: 20
 --- !u!54 &4289982164704554294
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -216,7 +226,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputReader: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
   playerMoveSpeed: 7
-  playerJumpForce: 50
+  playerJumpForce: 30
 --- !u!114 &1203609469834904063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -242,3 +252,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStateMachine
   attackController: {fileID: 4164044237219142947}
+--- !u!114 &824475451801987599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4550845846662401962}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c070bb89fb216af43ae5cf00caa00431, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDetector
+  rayOriginOffset: 0.15
+  rayDistance: 0.3
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 0

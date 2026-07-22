@@ -13,13 +13,17 @@ public class AttackingState : PlayerState
 
     public override PlayerStateType Type => PlayerStateType.Attacking;
 
+    // Set by the state that transitions in, just before Enter() runs.
+    public bool PendingHeavy;
+
     public override bool IsInvincible => false;
 
     public override void Enter()
     {
         elapsed = 0f;
+        Machine.Animator.SetBool(Machine.AnimIDIsHeavyAttack, PendingHeavy);
         Machine.Animator.SetTrigger(Machine.AnimIDAttack);
-        Machine.AttackController.Attack();
+        Machine.AttackController.Attack(PendingHeavy);
     }
 
     public override void Tick()

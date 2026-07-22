@@ -39,8 +39,9 @@ public class WalkingState : PlayerState
         Machine.ChangeState(Machine.Jumping);
     }
 
-    public override void OnAttackPressed()
+    public override void OnAttackPressed(bool isHeavy)
     {
+        Machine.Attacking.PendingHeavy = isHeavy;
         Machine.ChangeState(Machine.Attacking);
     }
 

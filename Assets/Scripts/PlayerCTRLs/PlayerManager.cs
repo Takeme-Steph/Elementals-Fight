@@ -12,6 +12,7 @@ public class PlayerManager : MonoBehaviour
     private SceneHandler sceneHandler;
     private bool gotHit;
     private float hitPoints;
+    private bool hitCausesKnockdown;
 
     // Start is called before the first frame update
     void Start()
@@ -29,10 +30,15 @@ public class PlayerManager : MonoBehaviour
     {
         if (!stateMachine.IsInvincible && gotHit)
         {
-            stateMachine.EnterHitstun();
+            if (hitCausesKnockdown)
+                stateMachine.EnterKnockdown();
+            else
+                stateMachine.EnterHitstun();
+
             playerHealth -= damage;
             gotHit = false;
             hitPoints = 0;
+            hitCausesKnockdown = false;
 
             if (playerHealth <= 0)
             {
@@ -41,9 +47,10 @@ public class PlayerManager : MonoBehaviour
         }
     }
 
-    public void Hit(float damage)
+    public void Hit(HitInfo info)
     {
         gotHit = true;
-        hitPoints = damage;
+        hitPoints = info.damage;
+        hitCausesKnockdown = info.causesKnockdown;
     }
 }

@@ -15,6 +15,8 @@ public class InputReader : ScriptableObject, PlayerInput.IGroundActions, PlayerI
     public event Action JumpCanceledEvent = delegate { };
     public event Action AttackEvent = delegate { };
     public event Action<bool> BlockEvent = delegate { };
+    public event Action HeavyAttackEvent = delegate { };
+
 
 
     // UI Events
@@ -52,7 +54,13 @@ public class InputReader : ScriptableObject, PlayerInput.IGroundActions, PlayerI
         if (context.phase == InputActionPhase.Started)
 			AttackEvent.Invoke();
     }
-    public void OnBlock(InputAction.CallbackContext context)
+    public void OnHeavyAttack(InputAction.CallbackContext context)
+    {
+        if (context.phase == InputActionPhase.Started)
+			HeavyAttackEvent.Invoke();
+    }
+    
+public void OnBlock(InputAction.CallbackContext context)
     {
         if (context.phase == InputActionPhase.Started)
 			BlockEvent.Invoke(true);

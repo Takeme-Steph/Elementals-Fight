@@ -12,6 +12,7 @@ public class PlayerController : MonoBehaviour
 
     private bool jump;
     private bool isAttacking;
+    private bool isHeavyAttacking;
 
     private Vector2 moveDirection;
 
@@ -23,6 +24,8 @@ public class PlayerController : MonoBehaviour
         inputReader.JumpCanceledEvent += HandleCanceledJump;
         inputReader.AttackEvent += HandleAttack;
         inputReader.BlockEvent += HandleBlock;
+        inputReader.HeavyAttackEvent += HandleHeavyAttack;
+
 
 
         TryGetComponent<PlayerStateMachine>(out stateMachine);
@@ -40,6 +43,8 @@ public class PlayerController : MonoBehaviour
         inputReader.JumpCanceledEvent -= HandleCanceledJump;
         inputReader.AttackEvent -= HandleAttack;
         inputReader.BlockEvent -= HandleBlock;
+        inputReader.HeavyAttackEvent -= HandleHeavyAttack;
+
 
     }
 
@@ -49,14 +54,25 @@ public class PlayerController : MonoBehaviour
         if (!TryGetComponent<Rigidbody>(out playerRigidbody))
             Debug.LogError(gameObject.name + " has no rigidbody attached");
 
-        // Try to get scene handler script and throw an error message if not found
-        if (!GameObject.Find("GameManager").TryGetComponent<SceneHandler>(out sceneHandler))
-            Debug.LogError("No scene handler script found in scene. Game will not run");
+        // Fixed: this used to look up GameManager by name via GameObject.Find(),
+        // which raced against script execution order and could silently fail,
+        // leaving sceneHandler null forever and crashing GroundCheck() every
+        // FixedUpdate. SceneHandler.Instance is set in its own Awake(), which
+        // is guaranteed to run before this Start(), so this is reliable.
+        sceneHandler = SceneHandler.Instance;
+        if (sceneHandler == null)
+            Debug.LogError("No SceneHandler.Instance found. Game will not run.");
     }
 
     void Update()
     {
-        if (sceneHandler == null) return; // guard against the Find() above failing
+        // Defensive fallback: if this ran before SceneHandler's Awake() for
+        // any reason, keep retrying instead of permanently giving up.
+        if (sceneHandler == null)
+        {
+            sceneHandler = SceneHandler.Instance;
+            if (sceneHandler == null) return;
+        }
 
         if (!sceneHandler.isGameOver && sceneHandler.activeMatch)
         {
@@ -68,8 +84,15 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (sceneHandler == null)
+        {
+            sceneHandler = SceneHandler.Instance;
+            if (sceneHandler == null) return;
+        }
+
+        // Ground detection moved to GroundDetector, which runs regardless of
+        // which controller (this one, or PlayerAutoPilot) is active.
         Move();
-        GroundCheck();
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -109,12 +132,23 @@ public class PlayerController : MonoBehaviour
 
     private void Attack()
     {
+        if (isHeavyAttacking)
+        {
+            isHeavyAttacking = false;
+            isAttacking = false;
+            if (stateMachine.CanAttack)
+            {
+                stateMachine.RequestAttack(true);
+            }
+            return;
+        }
+
         if (isAttacking)
         {
             isAttacking = false;
             if (stateMachine.CanAttack)
             {
-                stateMachine.RequestAttack();
+                stateMachine.RequestAttack(false);
             }
         }
     }
@@ -138,6 +172,12 @@ public class PlayerController : MonoBehaviour
     {
         isAttacking = true;
     }
+
+    private void HandleHeavyAttack()
+    {
+        isHeavyAttacking = true;
+    }
+
 
     private void HandleBlock(bool isHeld)
     {
@@ -166,22 +206,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    //Check when the player hits the ground
-    private void GroundCheck()
-    {
-        RaycastHit groundHit;
-        Physics.Raycast(transform.position, transform.TransformDirection(Vector3.down), out groundHit, 0.1f, sceneHandler.groundLayerMask);
-        Color rayColor;
-        if (groundHit.collider != null)
-        {
-            rayColor = Color.green;
-            if (!stateMachine.IsOnGround) stateMachine.SetGrounded(true);
-        }
-        else
-        {
-            rayColor = Color.red;
-            if (stateMachine.IsOnGround) stateMachine.SetGrounded(false);
-        }
-        Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.down) * 0.1f, rayColor);
-    }
+    // Ground detection now lives in GroundDetector.cs, shared across any
+    // controller type (human or AI) driving this character.
 }
