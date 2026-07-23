@@ -6,7 +6,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float playerMoveSpeed = 7f; // Player's movement speed.
     [SerializeField] private float playerJumpForce = 200f;
 
-    private Rigidbody playerRigidbody;
+    private CharacterPhysics characterPhysics;
     private PlayerStateMachine stateMachine;
     private SceneHandler sceneHandler;
 
@@ -26,8 +26,6 @@ public class PlayerController : MonoBehaviour
         inputReader.BlockEvent += HandleBlock;
         inputReader.HeavyAttackEvent += HandleHeavyAttack;
 
-
-
         TryGetComponent<PlayerStateMachine>(out stateMachine);
         if (stateMachine == null)
         {
@@ -44,21 +42,13 @@ public class PlayerController : MonoBehaviour
         inputReader.AttackEvent -= HandleAttack;
         inputReader.BlockEvent -= HandleBlock;
         inputReader.HeavyAttackEvent -= HandleHeavyAttack;
-
-
     }
 
     void Start()
     {
-        // Try to get player rigidbody and throw an error message if not found
-        if (!TryGetComponent<Rigidbody>(out playerRigidbody))
-            Debug.LogError(gameObject.name + " has no rigidbody attached");
+        if (!TryGetComponent<CharacterPhysics>(out characterPhysics))
+            Debug.LogError(gameObject.name + " has no CharacterPhysics component attached");
 
-        // Fixed: this used to look up GameManager by name via GameObject.Find(),
-        // which raced against script execution order and could silently fail,
-        // leaving sceneHandler null forever and crashing GroundCheck() every
-        // FixedUpdate. SceneHandler.Instance is set in its own Awake(), which
-        // is guaranteed to run before this Start(), so this is reliable.
         sceneHandler = SceneHandler.Instance;
         if (sceneHandler == null)
             Debug.LogError("No SceneHandler.Instance found. Game will not run.");
@@ -77,7 +67,6 @@ public class PlayerController : MonoBehaviour
         if (!sceneHandler.isGameOver && sceneHandler.activeMatch)
         {
             Jump();
-            KeepInBounds();
             Attack();
         }
     }
@@ -90,32 +79,10 @@ public class PlayerController : MonoBehaviour
             if (sceneHandler == null) return;
         }
 
-        // Ground detection moved to GroundDetector, which runs regardless of
-        // which controller (this one, or PlayerAutoPilot) is active.
-        Move();
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-
-    }
-
-    private void Move()
-    {
-        if (moveDirection == Vector2.zero)
-        {
-            stateMachine.Move(Vector2.zero, 0f);
-            return;
-        }
-
-        if (!stateMachine.CanMove) return;
-
-        if (transform.position.x > sceneHandler.safeZoneLeftX &&
-            transform.position.x < sceneHandler.safeZoneRightX)
-        {
-            stateMachine.Move(moveDirection, playerMoveSpeed);
-            transform.Translate(new Vector3(moveDirection.x, 0, 0) * (playerMoveSpeed * Time.deltaTime), Space.World);
-        }
+        // Movement (translate + bounds-keeping) and ground detection both
+        // live in CharacterPhysics, shared across any controller type
+        // (human or AI) driving this character.
+        characterPhysics.MoveHorizontal(moveDirection, playerMoveSpeed);
     }
 
     private void Jump()
@@ -123,9 +90,7 @@ public class PlayerController : MonoBehaviour
         if (jump && stateMachine.CanJump)
         {
             stateMachine.RequestJump();
-            // Fixed: ForceMode.Impulse already represents an instantaneous change,
-            // multiplying by Time.deltaTime was making jump height frame-rate dependent.
-            playerRigidbody.AddForce(Vector3.up * playerJumpForce, ForceMode.Impulse);
+            characterPhysics.ApplyJumpForce(playerJumpForce);
         }
         jump = false;
     }
@@ -178,34 +143,8 @@ public class PlayerController : MonoBehaviour
         isHeavyAttacking = true;
     }
 
-
     private void HandleBlock(bool isHeld)
     {
         stateMachine.RequestBlock(isHeld);
     }
-
-
-    //Keep the player within the safe playable area of the scene
-    private void KeepInBounds()
-    {
-        if (transform.position.x <= sceneHandler.safeZoneLeftX)
-        {
-            transform.position = new Vector3(sceneHandler.safeZoneLeftX + sceneHandler.resetBuffer, 0, transform.position.z);
-        }
-        else if (transform.position.x >= sceneHandler.safeZoneRightX)
-        {
-            transform.position = new Vector3(sceneHandler.safeZoneRightX - sceneHandler.resetBuffer, 0, transform.position.z);
-        }
-        else if (transform.position.y < sceneHandler.ground.transform.position.y)
-        {
-            transform.position = new Vector3(transform.position.x, sceneHandler.ground.transform.position.y + sceneHandler.resetBuffer, transform.position.z);
-        }
-        else if (transform.position.z != sceneHandler.ground.transform.position.z)
-        {
-            transform.position = new Vector3(transform.position.x, transform.position.y, sceneHandler.ground.transform.position.z);
-        }
-    }
-
-    // Ground detection now lives in GroundDetector.cs, shared across any
-    // controller type (human or AI) driving this character.
 }

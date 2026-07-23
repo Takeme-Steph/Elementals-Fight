@@ -1387,7 +1387,7 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 100000, guid: 69e6a6ea8e179f445bd248ba46f2a2e9,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 538198150386314301}
+      addedObject: {fileID: 149318555917672613}
   m_SourcePrefab: {fileID: 100100000, guid: 69e6a6ea8e179f445bd248ba46f2a2e9, type: 3}
 --- !u!1 &7520245450214503510 stripped
 GameObject:
@@ -1526,6 +1526,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4382c6d136a45c4998d9f0a80e872ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  moveSpeed: 6
+  jumpForce: 20
+  attackRange: 2.5
+  decisionInterval: 1
+  decisionIntervalVariance: 0.25
+  blockChance: 0.25
+  heavyAttackChance: 0.3
+  jumpChance: 0.05
 --- !u!114 &8630037291977240728
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1539,7 +1547,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStateMachine
   attackController: {fileID: 8901198433193348584}
---- !u!114 &538198150386314301
+--- !u!114 &149318555917672613
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1548,9 +1556,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7520245450214503510}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c070bb89fb216af43ae5cf00caa00431, type: 3}
+  m_Script: {fileID: 11500000, guid: e73aed6bd8b34d243b0971895e15ad76, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GroundDetector
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterPhysics
   rayOriginOffset: 0.15
   rayDistance: 0.3
   groundLayerMask:
