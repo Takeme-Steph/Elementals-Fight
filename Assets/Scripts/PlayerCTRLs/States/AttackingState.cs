@@ -18,6 +18,15 @@ public class AttackingState : PlayerState
 
     public override bool IsInvincible => false;
 
+    public override void Exit()
+    {
+        // Explicitly clear this rather than relying on it never being
+        // touched elsewhere - an Animator state with Write Defaults enabled
+        // can reset it unpredictably, and the next attack correctly setting
+        // it isn't a substitute for actually clearing it when we leave.
+        Machine.Animator.SetBool(Machine.AnimIDIsHeavyAttack, false);
+    }
+
     public override void Enter()
     {
         elapsed = 0f;
