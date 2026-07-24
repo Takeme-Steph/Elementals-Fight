@@ -22,7 +22,7 @@ public class PlayerStateMachine : MonoBehaviour
     public int AnimIDSpeed { get; private set; }
     public int AnimIDHit { get; private set; }
     public int AnimIDBlock { get; private set; }
-    public int AnimIDKnockdown { get; private set; }
+    public int AnimIDKnockback { get; private set; }
     public int AnimIDIsHeavyAttack { get; private set; }
 
     // States - constructed once and reused (avoids per-transition allocation).
@@ -32,7 +32,7 @@ public class PlayerStateMachine : MonoBehaviour
     public AttackingState Attacking { get; private set; }
     public BlockingState Blocking { get; private set; }
     public HitstunState Hitstun { get; private set; }
-    public KnockdownState Knockdown { get; private set; }
+    public KnockbackState Knockback { get; private set; }
 
     private PlayerState current;
     public PlayerStateType CurrentStateType => current.Type;
@@ -64,7 +64,7 @@ public class PlayerStateMachine : MonoBehaviour
         Attacking = new AttackingState(this);
         Blocking = new BlockingState(this);
         Hitstun = new HitstunState(this);
-        Knockdown = new KnockdownState(this);
+        Knockback = new KnockbackState(this);
 
         // Fixed: this used to be set in Start(), but Awake() is what Unity
         // guarantees runs synchronously the instant this object is instantiated
@@ -124,11 +124,11 @@ public class PlayerStateMachine : MonoBehaviour
         ChangeState(Hitstun);
     }
 
-    // Explicit entry point for knockdown, to be wired up to heavy attacks /
-    // low-health hits later.
-    public void EnterKnockdown()
+    // Entry point for heavy-attack knockback (light stagger, not a full
+    // knockdown - that's a future, heavier state).
+    public void EnterKnockback()
     {
-        ChangeState(Knockdown);
+        ChangeState(Knockback);
     }
 
     // --- Backward-compatible names for existing Animation Events ---
@@ -149,7 +149,7 @@ public class PlayerStateMachine : MonoBehaviour
         AnimIDSpeed = Animator.StringToHash("Speed");
         AnimIDHit = Animator.StringToHash("Hit");
         AnimIDBlock = Animator.StringToHash("isBlocking");
-        AnimIDKnockdown = Animator.StringToHash("isKnockedDown");
+        AnimIDKnockback = Animator.StringToHash("isKnockedback");
         AnimIDIsHeavyAttack = Animator.StringToHash("isHeavyAttack");
     }
 }
