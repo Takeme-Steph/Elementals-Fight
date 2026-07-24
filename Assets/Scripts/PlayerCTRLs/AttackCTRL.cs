@@ -3,16 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Carries what actually happened in a hit, so the receiving PlayerManager
-// can decide between a normal hitstun reaction and a full knockdown.
+// can decide between a normal hitstun reaction and a knockback, and which
+// direction to physically push the target.
 public class HitInfo
 {
     public float damage;
-    public bool causesKnockdown;
+    public bool causesKnockback;
+    public float knockbackDirectionX; // -1 or 1, horizontal push direction
 
-    public HitInfo(float damage, bool causesKnockdown)
+    public HitInfo(float damage, bool causesKnockback, float knockbackDirectionX)
     {
         this.damage = damage;
-        this.causesKnockdown = causesKnockdown;
+        this.causesKnockback = causesKnockback;
+        this.knockbackDirectionX = knockbackDirectionX;
     }
 }
 
@@ -43,7 +46,8 @@ public class AttackCTRL : MonoBehaviour
             if (parentObject.transform == transform) { continue; }
             Debug.Log(c.name);
 
-            parentObject.SendMessage("Hit", new HitInfo(damage, isHeavy));
+            float knockbackDirectionX = Mathf.Sign(parentObject.transform.position.x - transform.position.x);
+            parentObject.SendMessage("Hit", new HitInfo(damage, isHeavy, knockbackDirectionX));
             break;
         }
     }

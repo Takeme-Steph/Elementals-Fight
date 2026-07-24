@@ -44,6 +44,19 @@ public class CharacterPhysics : MonoBehaviour
         Color rayColor = grounded ? Color.green : Color.red;
         Debug.DrawRay(origin, transform.TransformDirection(Vector3.down) * rayDistance, rayColor);
 
+        // Fixed: landing never zeroed out the Rigidbody's downward velocity -
+        // only the transform position got corrected when sinking below
+        // ground (in KeepInBounds), while gravity kept accelerating the
+        // Rigidbody downward every tick regardless. That residual velocity
+        // immediately punched the character back through the floor on the
+        // very next physics step, deeper each time - a runaway sink that
+        // only became visible once jump/knockback velocities got large
+        // enough for the effect to be noticeable.
+        if (grounded && rb.linearVelocity.y < 0f)
+        {
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+        }
+
         // Deliberately unconditional, not edge-triggered: an Animator state with
         // "Write Defaults" enabled can silently reset bool parameters (like
         // isGrounded) back to false the instant it's entered, without our
@@ -113,6 +126,10 @@ public class CharacterPhysics : MonoBehaviour
         else if (transform.position.y < sh.ground.transform.position.y)
         {
             transform.position = new Vector3(transform.position.x, sh.ground.transform.position.y + sh.resetBuffer, transform.position.z);
+            // Safety net alongside the FixedUpdate check above, in case this
+            // ever fires from a state the ground raycast didn't catch.
+            if (rb.linearVelocity.y < 0f)
+                rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
         }
         else if (transform.position.z != sh.ground.transform.position.z)
         {

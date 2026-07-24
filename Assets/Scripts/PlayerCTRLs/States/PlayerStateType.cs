@@ -6,5 +6,7 @@ public enum PlayerStateType
     Attacking,
     Blocking,
     Hitstun,
-    Knockdown
+    Knockback
+    // Knockdown will come later as a distinct, heavier state (block
+    // breakers, combos, fatalities) - separate from this lighter stagger.
 }

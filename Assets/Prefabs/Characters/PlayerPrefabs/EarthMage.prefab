@@ -1457,6 +1457,8 @@ MonoBehaviour:
   playerMaxHealth: 100
   playerHealth: 100
   matchWinCount: 0
+  knockbackForce: 20
+  blockDamageMultiplier: 0.2
 --- !u!114 &-4783242635702432794
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1472,7 +1474,7 @@ MonoBehaviour:
   moveSpeed: 6
   jumpForce: 20
   attackRange: 2.5
-  decisionInterval: 1
+  decisionInterval: 2
   decisionIntervalVariance: 0.25
   blockChance: 0.25
   heavyAttackChance: 0.3
