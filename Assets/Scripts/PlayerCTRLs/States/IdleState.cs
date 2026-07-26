@@ -49,9 +49,4 @@ public class IdleState : PlayerState
         // Walked off a ledge - treat as airborne.
         Machine.ChangeState(Machine.Jumping);
     }
-
-    public override void OnHit(float damage)
-    {
-        Machine.EnterHitstun();
-    }
 }

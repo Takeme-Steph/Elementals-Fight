@@ -131,12 +131,25 @@ public class PlayerStateMachine : MonoBehaviour
         ChangeState(Knockback);
     }
 
+    // Called by SceneHandler when starting a new round - forces back to a
+    // clean Idle regardless of whatever state the character was in when the
+    // previous round ended (mid-attack, hitstun, knockback, etc.).
+    public void ForceIdle()
+    {
+        ChangeState(Idle);
+    }
+
     // --- Backward-compatible names for existing Animation Events ---
     // Your attack/hit-reaction animation clips already call these by name;
     // keeping the same method names means you don't need to touch those clips.
 
     public void StopAttacking() => current.OnAnimationComplete();
     public void EndHit() => current.OnAnimationComplete();
+
+    // Add an animation event calling this at the actual impact frame of each
+    // attack clip (light and heavy) - not at the start of the animation, so
+    // the hit lands in sync with when the weapon/limb visually connects.
+    public void PerformAttack() => Attacking.PerformAttack();
 
     private void AssignAnimationIDs()
     {
