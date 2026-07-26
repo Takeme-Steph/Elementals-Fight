@@ -13,6 +13,11 @@ public class MatchUIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI playerRoundWinsText;
     [SerializeField] private TextMeshProUGUI oppRoundWinsText;
 
+    [Header("Round transition (announcement + countdown)")]
+    [SerializeField] private GameObject roundTransitionPanel;
+    [SerializeField] private TextMeshProUGUI roundWinnerText;
+    [SerializeField] private TextMeshProUGUI roundCountdownText;
+
     [Header("Game Over screen")]
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private TextMeshProUGUI gameOverText;
@@ -23,17 +28,24 @@ public class MatchUIManager : MonoBehaviour
     {
         sceneHandler.RoundWinsChanged += OnRoundWinsChanged;
         sceneHandler.GameEnded += OnGameEnded;
+        sceneHandler.RoundEnded += OnRoundEnded;
+        sceneHandler.RoundCountdownTick += OnRoundCountdownTick;
+        sceneHandler.RoundTransitionEnded += OnRoundTransitionEnded;
     }
 
     private void OnDisable()
     {
         sceneHandler.RoundWinsChanged -= OnRoundWinsChanged;
         sceneHandler.GameEnded -= OnGameEnded;
+        sceneHandler.RoundEnded -= OnRoundEnded;
+        sceneHandler.RoundCountdownTick -= OnRoundCountdownTick;
+        sceneHandler.RoundTransitionEnded -= OnRoundTransitionEnded;
     }
 
     private void Start()
     {
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (roundTransitionPanel != null) roundTransitionPanel.SetActive(false);
         if (playAgainButton != null) playAgainButton.onClick.AddListener(PlayAgain);
         if (quitButton != null) quitButton.onClick.AddListener(QuitGame);
 
@@ -45,6 +57,23 @@ public class MatchUIManager : MonoBehaviour
     {
         if (playerRoundWinsText != null) playerRoundWinsText.text = mainWins.ToString();
         if (oppRoundWinsText != null) oppRoundWinsText.text = oppWins.ToString();
+    }
+
+    private void OnRoundEnded(bool mainPlayerWonRound)
+    {
+        if (roundWinnerText != null)
+            roundWinnerText.text = mainPlayerWonRound ? "You Won the Round!" : "Opponent Won the Round!";
+        if (roundTransitionPanel != null) roundTransitionPanel.SetActive(true);
+    }
+
+    private void OnRoundCountdownTick(int secondsRemaining)
+    {
+        if (roundCountdownText != null) roundCountdownText.text = secondsRemaining.ToString();
+    }
+
+    private void OnRoundTransitionEnded()
+    {
+        if (roundTransitionPanel != null) roundTransitionPanel.SetActive(false);
     }
 
     private void OnGameEnded(bool mainPlayerWon)
