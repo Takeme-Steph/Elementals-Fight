@@ -146,6 +146,11 @@ public class PlayerStateMachine : MonoBehaviour
     public void StopAttacking() => current.OnAnimationComplete();
     public void EndHit() => current.OnAnimationComplete();
 
+    // Add an animation event calling this at the actual impact frame of each
+    // attack clip (light and heavy) - not at the start of the animation, so
+    // the hit lands in sync with when the weapon/limb visually connects.
+    public void PerformAttack() => Attacking.PerformAttack();
+
     private void AssignAnimationIDs()
     {
         AnimIDWalk = Animator.StringToHash("isWalking");
