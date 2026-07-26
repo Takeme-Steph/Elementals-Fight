@@ -123,8 +123,18 @@ public class PlayerController : MonoBehaviour
         moveDirection = direction;
     }
 
+    // Fixed: Jump()/Attack() only *consume* these flags inside Update()'s
+    // isGameOver/activeMatch gate - the flags themselves used to get set here
+    // unconditionally. A press during the round-transition countdown or after
+    // Game Over would set the flag with nothing there that frame to consume
+    // it, so it sat queued until activeMatch flipped back true and fired on
+    // the first frame of the next round, even though the player had long
+    // since stopped pressing anything. Gating here, before the flag is ever
+    // set, matches how HandleBlock already guards.
     private void HandleJump()
     {
+        if (sceneHandler == null || sceneHandler.isGameOver || !sceneHandler.activeMatch) return;
+
         jump = true;
     }
 
@@ -135,16 +145,27 @@ public class PlayerController : MonoBehaviour
 
     private void HandleAttack()
     {
+        if (sceneHandler == null || sceneHandler.isGameOver || !sceneHandler.activeMatch) return;
+
         isAttacking = true;
     }
 
     private void HandleHeavyAttack()
     {
+        if (sceneHandler == null || sceneHandler.isGameOver || !sceneHandler.activeMatch) return;
+
         isHeavyAttacking = true;
     }
 
     private void HandleBlock(bool isHeld)
     {
+        // Fixed: unlike Jump()/Attack(), which are polled from Update() and
+        // already sit behind its isGameOver/activeMatch gate, this fires
+        // directly off InputReader.BlockEvent on press/release - so without
+        // this check, holding Block still worked during the post-round
+        // countdown and after Game Over.
+        if (sceneHandler == null || sceneHandler.isGameOver || !sceneHandler.activeMatch) return;
+
         stateMachine.RequestBlock(isHeld);
     }
 }
