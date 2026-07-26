@@ -27,7 +27,6 @@ public class PlayerAutoPilot : MonoBehaviour
     private SceneHandler sceneHandler;
 
     private Vector2 moveDirection;
-    private bool wantsToBlock;
     private float decisionTimer;
 
     private void Start()
@@ -55,11 +54,15 @@ public class PlayerAutoPilot : MonoBehaviour
 
         if (sceneHandler.isGameOver || !sceneHandler.activeMatch) return;
 
-        // Block is a held state, not a one-shot action, so this needs to be
-        // reasserted continuously rather than only at decision time -
-        // RequestBlock is idempotent (safe to call every frame with the
-        // same value), same as PlayerController relies on for input.
-        stateMachine.RequestBlock(wantsToBlock);
+        // Fixed: movement used to only get recalculated at the (slow, ~0.6-1s)
+        // decision tick, same as the attack/block choice. That meant the AI
+        // kept walking toward the player for up to a full decision interval
+        // after already being in range or physically touching them - it
+        // wasn't "unable to tell it was close enough", it just hadn't
+        // re-checked yet. Distance/movement now updates every frame, fully
+        // decoupled from the slower attack/block/jump decision timer, which
+        // stays deliberately unhurried so the AI doesn't feel robotic.
+        UpdateMovement();
 
         decisionTimer -= Time.deltaTime;
         if (decisionTimer <= 0f)
@@ -75,7 +78,10 @@ public class PlayerAutoPilot : MonoBehaviour
         characterPhysics.MoveHorizontal(moveDirection, moveSpeed);
     }
 
-    private void MakeDecision()
+    // Continuous, every-frame: purely "should I still be closing the
+    // distance right now". Nothing here is a considered decision, it's just
+    // physically reacting to where the opponent currently is.
+    private void UpdateMovement()
     {
         GameObject opponent = sceneHandler.GetMainPlayer();
         if (opponent == null)
@@ -87,25 +93,34 @@ public class PlayerAutoPilot : MonoBehaviour
         float delta = opponent.transform.position.x - transform.position.x;
         float distance = Mathf.Abs(delta);
 
+        moveDirection = distance > attackRange ? new Vector2(Mathf.Sign(delta), 0f) : Vector2.zero;
+    }
+
+    // Slower, deliberate: what to actually DO once in range - attack, block,
+    // or occasionally jump. Kept on its own timer so the AI reads as making
+    // considered choices rather than reacting instantly every frame.
+    private void MakeDecision()
+    {
+        GameObject opponent = sceneHandler.GetMainPlayer();
+        if (opponent == null) return;
+
+        float delta = opponent.transform.position.x - transform.position.x;
+        float distance = Mathf.Abs(delta);
+
         if (distance > attackRange)
         {
-            // Out of range - close the distance, don't block while approaching.
-            moveDirection = new Vector2(Mathf.Sign(delta), 0f);
-            wantsToBlock = false;
+            stateMachine.RequestBlock(false);
         }
         else
         {
-            // In range - stop closing and pick an action.
-            moveDirection = Vector2.zero;
-
             float roll = Random.value;
             if (roll < blockChance)
             {
-                wantsToBlock = true;
+                stateMachine.RequestBlock(true);
             }
             else
             {
-                wantsToBlock = false;
+                stateMachine.RequestBlock(false);
                 if (stateMachine.CanAttack)
                 {
                     bool heavy = Random.value < heavyAttackChance;
