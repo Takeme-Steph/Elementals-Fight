@@ -1564,6 +1564,7 @@ MonoBehaviour:
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 0
+  invertFacing: 0
 --- !u!4 &7520245450214991878 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400112, guid: 69e6a6ea8e179f445bd248ba46f2a2e9,
