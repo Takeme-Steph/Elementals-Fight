@@ -1499,6 +1499,8 @@ MonoBehaviour:
   playerMaxHealth: 100
   playerHealth: 100
   matchWinCount: 0
+  knockbackForce: 20
+  blockDamageMultiplier: 0.2
 --- !u!114 &-6092717924412027851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1513,7 +1515,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputReader: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
   playerMoveSpeed: 7
-  playerJumpForce: 20
+  playerJumpForce: 35
 --- !u!114 &-6927977144846988723
 MonoBehaviour:
   m_ObjectHideFlags: 0
