@@ -145,6 +145,13 @@ public class PlayerController : MonoBehaviour
 
     private void HandleBlock(bool isHeld)
     {
+        // Fixed: unlike Jump()/Attack(), which are polled from Update() and
+        // already sit behind its isGameOver/activeMatch gate, this fires
+        // directly off InputReader.BlockEvent on press/release - so without
+        // this check, holding Block still worked during the post-round
+        // countdown and after Game Over.
+        if (sceneHandler == null || sceneHandler.isGameOver || !sceneHandler.activeMatch) return;
+
         stateMachine.RequestBlock(isHeld);
     }
 }
