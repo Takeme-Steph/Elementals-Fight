@@ -277,3 +277,4 @@ MonoBehaviour:
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 0
+  invertFacing: 0

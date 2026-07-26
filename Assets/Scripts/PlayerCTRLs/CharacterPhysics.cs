@@ -12,6 +12,10 @@ public class CharacterPhysics : MonoBehaviour
     [SerializeField] private float rayDistance = 0.3f;
     [SerializeField] private LayerMask groundLayerMask;
 
+    [Header("Facing")]
+    [Tooltip("Flip if the character faces the wrong way by default (away from the opponent when this is off).")]
+    [SerializeField] private bool invertFacing = false;
+
     private Rigidbody rb;
     private PlayerStateMachine stateMachine;
 
@@ -36,6 +40,7 @@ public class CharacterPhysics : MonoBehaviour
         if (stateMachine == null) return;
 
         KeepInBounds();
+        FaceOpponent();
 
         Vector3 origin = transform.position + Vector3.up * rayOriginOffset;
         RaycastHit groundHit;
@@ -104,6 +109,31 @@ public class CharacterPhysics : MonoBehaviour
             stateMachine.Move(direction, speed);
             transform.Translate(new Vector3(direction.x, 0, 0) * (speed * Time.deltaTime), Space.World);
         }
+    }
+
+    // Instantly turns to face whichever side the opponent is currently on -
+    // fighting games snap-turn rather than smoothly rotate. Rotation-based
+    // (not a localScale.x flip) since these are real 3D models; mirroring
+    // via negative scale can look wrong on non-symmetric geometry.
+    private void FaceOpponent()
+    {
+        if (SceneHandler.Instance == null) return;
+
+        GameObject opponent = SceneHandler.Instance.GetOpponentOf(gameObject);
+        if (opponent == null) return;
+
+        float delta = opponent.transform.position.x - transform.position.x;
+        if (Mathf.Abs(delta) < 0.01f) return; // avoid jitter when directly overlapping
+
+        bool faceRight = delta > 0f;
+        if (invertFacing) faceRight = !faceRight;
+
+        // Fixed: this assumed a neutral facing of 0/180 degrees, but the actual
+        // character prefabs are authored with a neutral forward of 90 degrees
+        // (confirmed on EarthMage and Ninja) - the wrong assumption rotated
+        // characters to face the camera/away from it instead of left/right.
+        float targetYRotation = faceRight ? 90f : 270f;
+        transform.rotation = Quaternion.Euler(0f, targetYRotation, 0f);
     }
 
     // Keeps the character within the playable area - was previously only
