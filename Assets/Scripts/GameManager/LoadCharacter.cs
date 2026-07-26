@@ -71,7 +71,7 @@ public class LoadCharacter : MonoBehaviour
         }
 
         playerManager.isCTRLPlayer = true;
-        playerManager.matchWinCount = 0;
+        playerManager.roundWins = 0;
     }
 
     void SpawnOpponent()
@@ -102,6 +102,6 @@ public class LoadCharacter : MonoBehaviour
         }
         
         playerManager.isCTRLPlayer = false;
-        playerManager.matchWinCount = 0;
+        playerManager.roundWins = 0;
     }
 }

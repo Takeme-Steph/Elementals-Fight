@@ -212,6 +212,8 @@ MonoBehaviour:
   playerMaxHealth: 100
   playerHealth: 100
   matchWinCount: 0
+  knockbackForce: 20
+  blockDamageMultiplier: 0.2
 --- !u!114 &-1493097844586062683
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -226,7 +228,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputReader: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
   playerMoveSpeed: 7
-  playerJumpForce: 30
+  playerJumpForce: 35
 --- !u!114 &1203609469834904063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -277,3 +279,4 @@ MonoBehaviour:
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 0
+  invertFacing: 0

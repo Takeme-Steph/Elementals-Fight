@@ -11,10 +11,10 @@ public class BlockingState : PlayerState
     public override bool AllowsAttack => false;
     public override bool AllowsBlock => true;
 
-    // TODO: once damage-reduction-while-blocking is designed, this is the
-    // place to apply it (e.g. reduce incoming damage instead of full invincibility).
+    // Chip-damage mitigation while blocking is handled in PlayerManager,
+    // which checks CurrentStateType == Blocking directly.
 
-    public override void Enter()
+public override void Enter()
     {
         Machine.Animator.SetBool(Machine.AnimIDBlock, true);
     }
@@ -35,9 +35,5 @@ public class BlockingState : PlayerState
         Machine.ChangeState(Machine.Jumping);
     }
 
-    public override void OnHit(float damage)
-    {
-        // Blocked hits still interrupt for now - refine later with chip damage / block stun.
-        Machine.EnterHitstun();
-    }
+    
 }

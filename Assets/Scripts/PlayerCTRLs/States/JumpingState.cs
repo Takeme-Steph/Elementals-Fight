@@ -28,11 +28,6 @@ public class JumpingState : PlayerState
         Machine.ChangeState(Machine.Attacking);
     }
 
-    public override void OnHit(float damage)
-    {
-        Machine.EnterHitstun();
-    }
-
     public override void OnGrounded()
     {
         // Landed - go back to whatever grounded state fits current input.
