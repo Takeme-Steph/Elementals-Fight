@@ -50,6 +50,20 @@ public class SceneHandler : MonoBehaviour
     // (mainPlayerWon)
     public event System.Action<bool> GameEnded;
 
+    // Fired once a round ends (but the match continues), so UI can announce
+    // the round winner. (mainPlayerWonRound)
+    public event System.Action<bool> RoundEnded;
+
+    // Fired once per second during the post-round pause, counting down to
+    // the next round.
+    public event System.Action<int> RoundCountdownTick;
+
+    // Fired right before the next round actually starts, so UI can hide the
+    // round-transition overlay.
+    public event System.Action RoundTransitionEnded;
+
+    [SerializeField] private float roundEndDelay = 3f;
+
     public LayerMask groundLayerMask;
 
     public Slider playerHealthBar;
@@ -128,8 +142,28 @@ public class SceneHandler : MonoBehaviour
         }
         else
         {
-            StartNewRound();
+            activeMatch = false; // freeze gameplay for the announcement/countdown
+            StartCoroutine(RoundTransitionSequence(winner));
         }
+    }
+
+    // Announces the round winner, counts down for roundEndDelay seconds
+    // (respecting Time.timeScale, so pausing mid-countdown correctly freezes
+    // it too), then actually starts the next round.
+    private IEnumerator RoundTransitionSequence(PlayerManager winner)
+    {
+        RoundEnded?.Invoke(winner == mainPlayerManager);
+
+        int remaining = Mathf.CeilToInt(roundEndDelay);
+        while (remaining > 0)
+        {
+            RoundCountdownTick?.Invoke(remaining);
+            yield return new WaitForSeconds(1f);
+            remaining--;
+        }
+
+        RoundTransitionEnded?.Invoke();
+        StartNewRound();
     }
 
     private void StartNewRound()
