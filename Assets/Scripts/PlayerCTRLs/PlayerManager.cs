@@ -7,9 +7,13 @@ public class PlayerManager : MonoBehaviour
     public bool isCTRLPlayer; // flag if this is a player controlled character
     public float playerMaxHealth = 100;
     public float playerHealth = 100;
+
+    // Fired only when health actually changes, so UI can react to it
+    // instead of polling every frame (see SceneHandler).
+    public event System.Action<float, float> HealthChanged;
     private PlayerStateMachine stateMachine;
     private CharacterPhysics characterPhysics;
-    public int matchWinCount;
+    public int roundWins; // rounds won so far in the current match
     private SceneHandler sceneHandler;
     private bool gotHit;
     private float hitPoints;
@@ -62,6 +66,7 @@ public class PlayerManager : MonoBehaviour
                 // Blocked hit: reduced chip damage, stay in Blocking - no
                 // hitstun/knockdown interruption.
                 playerHealth -= damage * blockDamageMultiplier;
+                HealthChanged?.Invoke(playerHealth, playerMaxHealth);
             }
             else
             {
@@ -77,6 +82,7 @@ public class PlayerManager : MonoBehaviour
                 }
 
                 playerHealth -= damage;
+                HealthChanged?.Invoke(playerHealth, playerMaxHealth);
             }
 
             gotHit = false;
@@ -85,9 +91,16 @@ public class PlayerManager : MonoBehaviour
 
             if (playerHealth <= 0)
             {
-                sceneHandler.MatchOver();
+                sceneHandler.RoundOver(this);
             }
         }
+    }
+
+    // Called by SceneHandler when starting a new round.
+    public void ResetHealth()
+    {
+        playerHealth = playerMaxHealth;
+        HealthChanged?.Invoke(playerHealth, playerMaxHealth);
     }
 
     public void Hit(HitInfo info)
