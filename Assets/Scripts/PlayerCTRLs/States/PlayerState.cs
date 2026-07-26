@@ -33,7 +33,9 @@ public abstract class PlayerState
     public virtual void OnBlockPressed(bool isHeld) { }
     public virtual void OnGrounded() { }
     public virtual void OnLeftGround() { }
-    public virtual void OnHit(float damage) { }
+    // OnHit() removed - hits are applied directly via
+    // PlayerStateMachine.EnterHitstun()/EnterKnockback(), called by
+    // PlayerManager. Nothing routes through a per-state hook for this.
 
     // Called when the driving animation reaches its end (via animation event).
     public virtual void OnAnimationComplete() { }
