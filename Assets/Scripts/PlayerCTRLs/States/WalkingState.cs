@@ -55,9 +55,4 @@ public class WalkingState : PlayerState
     {
         Machine.ChangeState(Machine.Jumping);
     }
-
-    public override void OnHit(float damage)
-    {
-        Machine.EnterHitstun();
-    }
 }
