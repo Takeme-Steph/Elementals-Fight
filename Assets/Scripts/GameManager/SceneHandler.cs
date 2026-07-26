@@ -33,6 +33,22 @@ public class SceneHandler : MonoBehaviour
     public bool isGameOver;
     public bool activeMatch;
     private PlayerManager[] playerManagers;
+    private PlayerManager mainPlayerManager;
+    private PlayerManager oppPlayerManager;
+    private PlayerStateMachine mainPlayerStateMachine;
+    private PlayerStateMachine oppPlayerStateMachine;
+
+    [SerializeField] private int roundsToWinMatch = 3;
+    private Vector3 mainPlayerStartPos;
+    private Vector3 oppPlayerStartPos;
+
+    // Fired whenever either player's round-win count changes, so UI can
+    // reflect it without polling. (mainWins, oppWins)
+    public event System.Action<int, int> RoundWinsChanged;
+
+    // Fired once a player has won enough rounds to win the whole match.
+    // (mainPlayerWon)
+    public event System.Action<bool> GameEnded;
 
     public LayerMask groundLayerMask;
 
@@ -54,13 +70,19 @@ public class SceneHandler : MonoBehaviour
 
         InitializeVariables();
         FindPlayers();
-        UpdateHealthBars();
+        SubscribeToHealthEvents();
         activeMatch = true;
     }
 
+    // Fixed: this used to call UpdateHealthBars() unconditionally every single
+    // frame, which did a fresh TryGetComponent<PlayerManager>() lookup on both
+    // players every frame too - continuous polling and repeated redundant
+    // component lookups for a value that only actually changes occasionally
+    // (on a hit). Now the bars update only when PlayerManager.HealthChanged
+    // actually fires - see SubscribeToHealthEvents() and OnMainPlayerHealthChanged/
+    // OnOppPlayerHealthChanged below.
     void Update()
     {
-        UpdateHealthBars();
         // Add your update logic here if needed
     }
 
@@ -87,14 +109,62 @@ public class SceneHandler : MonoBehaviour
         safeZoneLeftX = envLeftEdge.x + bufferX;
     }
 
-    private void GameOver()
+    // Called by a losing player's PlayerManager when its health hits zero.
+    // Ends the current round, awards it to the other player, and either
+    // starts a fresh round or ends the whole match if that's enough round
+    // wins.
+    public void RoundOver(PlayerManager loser)
     {
-        // Your game over logic goes here
+        if (isGameOver) return; // match already decided, ignore stray calls
+
+        PlayerManager winner = (loser == mainPlayerManager) ? oppPlayerManager : mainPlayerManager;
+        winner.roundWins++;
+
+        RoundWinsChanged?.Invoke(mainPlayerManager.roundWins, oppPlayerManager.roundWins);
+
+        if (winner.roundWins >= roundsToWinMatch)
+        {
+            EndMatch(winner);
+        }
+        else
+        {
+            StartNewRound();
+        }
     }
 
-    public void MatchOver()
+    private void StartNewRound()
     {
-        // Your match over logic goes here
+        activeMatch = false; // brief freeze while resetting, avoids stray input/hits mid-reset
+
+        mainPlayerManager.ResetHealth();
+        oppPlayerManager.ResetHealth();
+
+        if (mainPlayerStateMachine != null) mainPlayerStateMachine.ForceIdle();
+        if (oppPlayerStateMachine != null) oppPlayerStateMachine.ForceIdle();
+
+        mainPlayer.transform.position = mainPlayerStartPos;
+        oppPlayer.transform.position = oppPlayerStartPos;
+
+        activeMatch = true;
+    }
+
+    private void EndMatch(PlayerManager winner)
+    {
+        isGameOver = true;
+        activeMatch = false;
+        GameEnded?.Invoke(winner == mainPlayerManager);
+    }
+
+    // Called by the Game Over screen's "Play Again" button - resets round
+    // wins for a fresh match and starts the first round of it.
+    public void PlayAgain()
+    {
+        mainPlayerManager.roundWins = 0;
+        oppPlayerManager.roundWins = 0;
+        RoundWinsChanged?.Invoke(0, 0);
+
+        isGameOver = false;
+        StartNewRound();
     }
 
     private void FindPlayers()
@@ -176,6 +246,14 @@ public class SceneHandler : MonoBehaviour
         return mainPlayer;
     }
 
+    // Given one player, returns the other - used for facing and AI targeting.
+    public GameObject GetOpponentOf(GameObject self)
+    {
+        if (self == mainPlayer) return oppPlayer;
+        if (self == oppPlayer) return mainPlayer;
+        return null;
+    }
+
     public Transform[] GetPlayers()
     {
         return playerTransforms;
@@ -186,13 +264,47 @@ public class SceneHandler : MonoBehaviour
         Debug.LogError(playerGameObject.name + " has no PlayerManager script attached");
     }
 
-    public void UpdateHealthBars()
+    private void SubscribeToHealthEvents()
     {
-        mainPlayer.TryGetComponent<PlayerManager>(out PlayerManager mainPlayerManager);
-        oppPlayer.TryGetComponent<PlayerManager>(out PlayerManager oppPlayerManager);
+        if (mainPlayer == null || oppPlayer == null) return;
 
-        playerHealthBar.value = mainPlayerManager.playerHealth/mainPlayerManager.playerMaxHealth;
-        oppHealthBar.value = oppPlayerManager.playerHealth/oppPlayerManager.playerMaxHealth;
+        mainPlayer.TryGetComponent(out mainPlayerManager);
+        oppPlayer.TryGetComponent(out oppPlayerManager);
+        mainPlayer.TryGetComponent(out mainPlayerStateMachine);
+        oppPlayer.TryGetComponent(out oppPlayerStateMachine);
 
+        // Cache each player's scene-placed position as where they'll be put
+        // back at the start of every subsequent round.
+        mainPlayerStartPos = mainPlayer.transform.position;
+        oppPlayerStartPos = oppPlayer.transform.position;
+
+        if (mainPlayerManager != null)
+        {
+            mainPlayerManager.HealthChanged += OnMainPlayerHealthChanged;
+            // Initialize the bar to the correct starting fill immediately.
+            OnMainPlayerHealthChanged(mainPlayerManager.playerHealth, mainPlayerManager.playerMaxHealth);
+        }
+
+        if (oppPlayerManager != null)
+        {
+            oppPlayerManager.HealthChanged += OnOppPlayerHealthChanged;
+            OnOppPlayerHealthChanged(oppPlayerManager.playerHealth, oppPlayerManager.playerMaxHealth);
+        }
+    }
+
+    private void OnMainPlayerHealthChanged(float current, float max)
+    {
+        if (playerHealthBar != null) playerHealthBar.value = current / max;
+    }
+
+    private void OnOppPlayerHealthChanged(float current, float max)
+    {
+        if (oppHealthBar != null) oppHealthBar.value = current / max;
+    }
+
+    private void OnDestroy()
+    {
+        if (mainPlayerManager != null) mainPlayerManager.HealthChanged -= OnMainPlayerHealthChanged;
+        if (oppPlayerManager != null) oppPlayerManager.HealthChanged -= OnOppPlayerHealthChanged;
     }
 }
