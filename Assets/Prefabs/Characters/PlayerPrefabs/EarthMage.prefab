@@ -1263,7 +1263,7 @@ PrefabInstance:
     - target: {fileID: 1625258788960677049, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
       propertyPath: playerJumpForce
-      value: 20
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 3311423737265760273, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
@@ -1472,8 +1472,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 6
-  jumpForce: 20
-  attackRange: 2.5
+  jumpForce: 18
+  attackRange: 2
   decisionInterval: 2
   decisionIntervalVariance: 0.25
   blockChance: 0.25
