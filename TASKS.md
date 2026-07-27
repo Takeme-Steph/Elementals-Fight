@@ -93,7 +93,7 @@ Claude AI (Cowork) already applied the fix directly through a live Unity Editor 
 
 **Relevant files:** `connectwebgl.zip` (root), `.gitignore`
 
-**Done:** Independently re-verified Cowork's findings before deleting (no `.github/workflows`, `WebGL Builds/` is a complete real export, zip's last touching commit is unrelated to build/deploy). Removed `connectwebgl.zip` via `git rm` and added it to `.gitignore`. Pushed as `task/remove-stale-webgl-zip`, not yet a PR. As Cowork noted, this doesn't shrink the repo - the ~213 MiB across its 9 historical revisions stays until the (blocked) history-rewrite task runs.
+**Done:** Independently re-verified Cowork's findings before deleting (no `.github/workflows`, `WebGL Builds/` is a complete real export, zip's last touching commit is unrelated to build/deploy). Removed `connectwebgl.zip` via `git rm` and added it to `.gitignore`. As Cowork noted, this doesn't shrink the repo - the ~213 MiB across its 9 historical revisions stays until the (blocked) history-rewrite task runs.
 
 ---
 ### [x] Extend `.gitattributes` LFS patterns to cover `.anim` (and consider `.controller`) before `task/enable-git-lfs` merges
@@ -105,7 +105,7 @@ Separately, Cowork tested (not assumed) whether the existing `*.fbx` pattern act
 
 **Relevant files:** `.gitattributes`
 
-**Done:** Independently re-verified before acting: on `task/enable-git-lfs`'s HEAD alone (single snapshot, not full history) there are 14 `.anim` files / 67.5 MiB and 8 `.controller` files / 4.7 MiB - smaller than Cowork's full-history-across-all-branches figures, as expected given the different scope, but the core finding held up: individual clips run up to 14.6 MiB (`MageIdle.anim`, `WPIdle.anim`), confirmed as plain-text YAML, genuinely large. Also independently confirmed `core.ignorecase=true` and that `*.fbx` does catch a real `.FBX` file via `git check-attr`. Added `*.anim` and `*.controller` LFS patterns plus the `.FBX`/`core.ignorecase` comment near `*.fbx`, on `task/enable-git-lfs` directly (not yet merged). **Flagging per Cowork's note, not deciding silently: this trades away native git diffs on `.anim`/`.controller` files in exchange for ~72 MiB (on this branch's current file set; more once the rest of history is counted) once the separate history-migration task runs. If you'd rather keep those diffable, tell me and I'll drop the `.anim`/`.controller` lines before this branch merges.**
+**Done:** Independently re-verified before acting: on `task/enable-git-lfs`'s HEAD alone (single snapshot, not full history) there are 14 `.anim` files / 67.5 MiB and 8 `.controller` files / 4.7 MiB - smaller than Cowork's full-history-across-all-branches figures, as expected given the different scope, but the core finding held up: individual clips run up to 14.6 MiB (`MageIdle.anim`, `WPIdle.anim`), confirmed as plain-text YAML, genuinely large. Also independently confirmed `core.ignorecase=true` and that `*.fbx` does catch a real `.FBX` file via `git check-attr`. Added `*.anim` and `*.controller` LFS patterns plus the `.FBX`/`core.ignorecase` comment near `*.fbx`, on `task/enable-git-lfs` directly. Stephanie confirmed keeping `.anim`/`.controller` in LFS as-is.
 
 ---
 ### [!] BLOCKED — Rewrite repo history: migrate binary assets to LFS + purge `connectwebgl.zip` history
