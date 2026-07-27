@@ -13,7 +13,7 @@ Read `TASKS.md` at the start of a session for the current queue. If a task turns
 
 ## Repo / git conventions
 - Remote: `https://github.com/Takeme-Steph/Elementals-Fight` (origin), default branch `main`.
-- Uses Git LFS for large binary assets (models, textures) — don't bypass it.
+- Git LFS is enabled as of 2026-07-27 (`.gitattributes` tracks `.fbx`/`.png`/`.tga`/etc.) — don't bypass it for new or changed binaries. It was **not** active before that date: every model and texture committed earlier (the whole existing character roster, `Ninjas.FBX`, Yemoja's imported assets) was added as a regular git blob, not an LFS pointer, and has not been retroactively migrated. Don't assume a binary asset is LFS-backed just because it's in `Assets/` — check whether it predates 2026-07-27 before relying on that.
 - **Do not commit directly to `main`.** Create a feature branch per task (e.g. `task/fix-knockback-state`), commit there. Do not push or open a PR unless explicitly told to — leave the branch ready for review.
 - Keep commits scoped to one task. Write commit messages that explain *why*, not just *what* — matches the existing comment style in this codebase (see below).
 
