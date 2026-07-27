@@ -1,2 +1,39 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Git LFS - binary asset types. Enabled 2026-07-27; assets committed before
+# this date (models, textures across the existing roster) were added as
+# regular git blobs, not LFS pointers, and are NOT retroactively migrated by
+# this file alone - see CLAUDE.md for the current state and what's still
+# outstanding.
+# *.fbx also matches uppercase .FBX (e.g. the imported AllStarCharacterLibrary
+# animation packs) because core.ignorecase=true on a standard Windows
+# checkout. That's config-dependent, not guaranteed by this file - a
+# case-sensitive checkout (e.g. a Linux CI runner) would need an explicit
+# *.FBX line to get the same coverage.
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.tga filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.exr filter=lfs diff=lfs merge=lfs -text
+*.hdr filter=lfs diff=lfs merge=lfs -text
+*.ttf filter=lfs diff=lfs merge=lfs -text
+*.otf filter=lfs diff=lfs merge=lfs -text
+*.wav filter=lfs diff=lfs merge=lfs -text
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.ogg filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.pdf filter=lfs diff=lfs merge=lfs -text
+
+# .anim/.controller are plain ASCII YAML (Unity force-text serialization),
+# not binary - LFS-tracking them is a real diffability tradeoff, not a pure
+# bugfix. Some .anim clips run 5-15 MiB (dense baked curve data), well past
+# the point a line diff is reviewable anyway, so the tradeoff is mostly
+# theoretical - included by default, but flag this if you'd rather git keep
+# native diffs on these.
+*.anim filter=lfs diff=lfs merge=lfs -text
+*.controller filter=lfs diff=lfs merge=lfs -text
