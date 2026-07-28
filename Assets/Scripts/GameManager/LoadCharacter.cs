@@ -63,6 +63,16 @@ public class LoadCharacter : MonoBehaviour
         {
             Debug.LogError(player.name + " has no PlayerController script");
         }
+
+        PlayerAutoPilot autoPilot = player.GetComponent<PlayerAutoPilot>();
+        if (autoPilot != null)
+        {
+            autoPilot.enabled = false; // Prevent the fight AI from also driving the human-controlled character
+        }
+        else
+        {
+            Debug.LogError(player.name + " has no PlayerAutoPilot script");
+        }
         
         // Get player controller and log an error message of not found
         if(!player.TryGetComponent<PlayerManager>(out PlayerManager playerManager))
@@ -93,6 +103,16 @@ public class LoadCharacter : MonoBehaviour
         else
         {
             Debug.LogError(opponent.name + " has no PlayerAutoPilot script");
+        }
+
+        PlayerController playerController = opponent.GetComponent<PlayerController>();
+        if (playerController != null)
+        {
+            playerController.enabled = false; // Prevent human input from also driving the AI-controlled opponent
+        }
+        else
+        {
+            Debug.LogError(opponent.name + " has no PlayerController script");
         }
 
         // Get player controller and log an error message of not found
