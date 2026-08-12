@@ -1,0 +1,767 @@
+{
+  "schema_version": 13,
+  "generated": "2026-08-08",
+  "source_blend": "C:\\Users\\steph\\Documents\\Elementals-Fight\\Backups\\Yemoja_WORKING_v2_socketPearlLoc.blend",
+  "project": "Elementals Fight (mobile) — Yemoja",
+  "read_this_first": "A vertex group is a BONE DEFORM group if its name matches an armature bone; otherwise it is a CLASSIFICATION group (CL_ prefix). Classification groups are now ONE GARMENT PIECE EACH — the old CL_Shorts/CL_Accessories catch-alls were split 2026-08-05. Check \"islands\" before operating on any group anyway.",
+  "conventions": {
+    "axes": "X = left/right (Arm.L is +x), Y = front/back (front is -Y), Z = up",
+    "unit_scale": "~7.4 blender units tall for ~1.75 m; 1 unit ~= 0.237 m",
+    "mirror_plane_world_x": -0.0044,
+    "rest_pose": "A-pose; armature.data.pose_position toggles REST/POSE — edit shapes in REST",
+    "bone_naming": "mixamorig: prefix, Blender .L/.R suffixes; shin=\"Leg\", thigh=\"UpLeg\"",
+    "transform_residue": "Body/Clothes/Hair carry local scale 100 + rot X -90, cancelled by Armature scale 0.01 + rot X +90. FBX artefact — do not \"fix\" casually.",
+    "collections": "Yemoja > {Yemoja_Character, Yemoja_Rig}; lights/camera in _Staging"
+  },
+  "objects": {
+    "_daylight_sun": {
+      "type": "LIGHT",
+      "parent": null,
+      "collection": "_Staging",
+      "modifiers": [],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "_fill": {
+      "type": "LIGHT",
+      "parent": null,
+      "collection": "_Staging",
+      "modifiers": [],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "_review_cam": {
+      "type": "CAMERA",
+      "parent": null,
+      "collection": "_Staging",
+      "modifiers": [],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "Armature": {
+      "type": "ARMATURE",
+      "parent": null,
+      "collection": "Yemoja_Rig",
+      "modifiers": [],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        0.01,
+        0.01,
+        0.01
+      ]
+    },
+    "Hair": {
+      "type": "MESH",
+      "parent": "Armature",
+      "collection": "Yemoja_Character",
+      "modifiers": [
+        "ARMATURE"
+      ],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        100.0,
+        100.0,
+        100.0
+      ],
+      "verts": 4620,
+      "faces": 4391,
+      "non_manifold": 1,
+      "boundary_edges": 139,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "verts_effective": 4620,
+      "mesh": "Yemoja_Hair_mesh"
+    },
+    "Yemoja_Body": {
+      "type": "MESH",
+      "parent": "Armature",
+      "collection": "Yemoja_Character",
+      "modifiers": [
+        "ARMATURE"
+      ],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        100.0,
+        100.0,
+        100.0
+      ],
+      "verts": 6475,
+      "faces": 6592,
+      "non_manifold": 0,
+      "boundary_edges": 158,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "verts_effective": 6475,
+      "mesh": "Yemoja_Body_mesh",
+      "materials": [
+        "Yemoja",
+        "Yemoja_Lashes",
+        "Yemoja_Lips",
+        "Yemoja_Eye_mat"
+      ]
+    },
+    "Yemoja_Clothes": {
+      "type": "MESH",
+      "parent": "Armature",
+      "collection": "Yemoja_Character",
+      "modifiers": [
+        "ARMATURE"
+      ],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        100.0,
+        100.0,
+        100.0
+      ],
+      "verts": 7472,
+      "faces": 12058,
+      "non_manifold": 0,
+      "boundary_edges": 682,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "verts_effective": 7472,
+      "mesh": "Yemoja_Clothes_mesh"
+    },
+    "Yemoja_LashCards_Bottom_R": {
+      "type": "MESH",
+      "parent": "Armature",
+      "collection": "Yemoja_Character",
+      "modifiers": [
+        "MIRROR",
+        "ARMATURE"
+      ],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        0.72489,
+        0.00826,
+        0.61683
+      ],
+      "verts": 1296,
+      "faces": 628,
+      "non_manifold": 0,
+      "boundary_edges": 1100,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "verts_effective": 2592,
+      "mesh": "Yemoja_LashCards_Bottom_mesh"
+    },
+    "Yemoja_LashCards_Top_R": {
+      "type": "MESH",
+      "parent": "Armature",
+      "collection": "Yemoja_Character",
+      "modifiers": [
+        "MIRROR",
+        "ARMATURE"
+      ],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "verts": 1296,
+      "faces": 628,
+      "non_manifold": 0,
+      "boundary_edges": 1100,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "verts_effective": 2592,
+      "mesh": "Yemoja_LashCards_Top_mesh"
+    },
+    "Yemoja_Eyeliner": {
+      "type": "MESH",
+      "parent": "Armature",
+      "collection": "Yemoja_Character",
+      "modifiers": [
+        "MIRROR",
+        "ARMATURE"
+      ],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "verts": 69,
+      "faces": 33,
+      "verts_effective": 138,
+      "material": "Yemoja_Eyeliner_mat",
+      "mesh": "Yemoja_Eyeliner_mesh"
+    },
+    "Yemoja_Eyeliner_Lower": {
+      "type": "MESH",
+      "parent": "Armature",
+      "collection": "Yemoja_Character",
+      "modifiers": [
+        "MIRROR",
+        "ARMATURE"
+      ],
+      "hidden": false,
+      "hide_render": false,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "verts": 44,
+      "faces": 21,
+      "verts_effective": 88,
+      "material": "Yemoja_Eyeliner_mat",
+      "mesh": "Yemoja_Eyeliner_Lower_mesh"
+    }
+  },
+  "clothes_group_taxonomy": {
+    "CL_Anklet_L": {
+      "verts": 219,
+      "islands": 11,
+      "gap_to_skin_median": 0.0318
+    },
+    "CL_Anklet_R": {
+      "verts": 212,
+      "islands": 11,
+      "gap_to_skin_median": 0.0331
+    },
+    "CL_BeadCord_Inner_L": {
+      "verts": 216,
+      "islands": 1,
+      "gap_to_skin_median": 0.1617
+    },
+    "CL_BeadCord_Inner_R": {
+      "verts": 216,
+      "islands": 1,
+      "gap_to_skin_median": 0.1609
+    },
+    "CL_BeadCord_Outer_L": {
+      "verts": 216,
+      "islands": 1,
+      "gap_to_skin_median": 0.212
+    },
+    "CL_BeadCord_Outer_R": {
+      "verts": 216,
+      "islands": 1,
+      "gap_to_skin_median": 0.2107
+    },
+    "CL_Bracelet_L": {
+      "verts": 334,
+      "islands": 32,
+      "gap_to_skin_median": 0.0318
+    },
+    "CL_Bracelet_R": {
+      "verts": 336,
+      "islands": 32,
+      "gap_to_skin_median": 0.0314
+    },
+    "CL_Buckle": {
+      "verts": 147,
+      "islands": 1,
+      "gap_to_skin_median": 0.1343
+    },
+    "CL_BuckleFangs": {
+      "verts": 48,
+      "islands": 2,
+      "gap_to_skin_median": 0.2046
+    },
+    "CL_GroinFlap": {
+      "verts": 92,
+      "islands": 1,
+      "gap_to_skin_median": 0.1534
+    },
+    "CL_HipBand": {
+      "verts": 580,
+      "islands": 1,
+      "gap_to_skin_median": 0.0477
+    },
+    "CL_HipBeads_L": {
+      "verts": 1352,
+      "islands": 144,
+      "gap_to_skin_median": 0.1815
+    },
+    "CL_HipBeads_R": {
+      "verts": 1299,
+      "islands": 144,
+      "gap_to_skin_median": 0.1805
+    },
+    "CL_LegWrap_L": {
+      "verts": 188,
+      "islands": 3,
+      "gap_to_skin_median": 0.0617
+    },
+    "CL_LegWrap_R": {
+      "verts": 198,
+      "islands": 3,
+      "gap_to_skin_median": 0.0648
+    },
+    "CL_Necklace": {
+      "verts": 448,
+      "islands": 1,
+      "gap_to_skin_median": 0.0178
+    },
+    "CL_Shorts": {
+      "verts": 255,
+      "islands": 1,
+      "gap_to_skin_median": 0.0824
+    },
+    "CL_Top": {
+      "verts": 434,
+      "islands": 1,
+      "gap_to_skin_median": 0.0268
+    },
+    "CL_TopBand": {
+      "verts": 466,
+      "islands": 1,
+      "gap_to_skin_median": 0.0356
+    }
+  },
+  "garment_fit_targets_units": {
+    "CL_HipBand": 0.05,
+    "CL_Shorts": "height-dependent: 0.085 free on the leg, ramping to 0.020 above z=0.22 so it hides behind the band. Ramp must be smooth (smoothstep over z 0.05-0.22).",
+    "not_fitted": [
+      "CL_GroinFlap",
+      "CL_SidePanel_Outer_L",
+      "CL_SidePanel_Outer_R",
+      "CL_SidePanel_Inner_L",
+      "CL_SidePanel_Inner_R"
+    ],
+    "layer_order_skin_outward": [
+      "CL_Shorts",
+      "CL_HipBand",
+      "CL_GroinFlap",
+      "CL_Buckle"
+    ]
+  },
+  "lash_setup": {
+    "structure": "each lash object is ~118 strand islands, 5 cross-sections x 3 columns each",
+    "skinning": "single vertex group mixamorig:Head at weight 1.0, plus Mirror BEFORE Armature",
+    "history": "reduced 11x from 14289 verts/object on 2026-08-05; full-res originals preserved in Backups/Yemoja_PRE_lashDecimate.blend",
+    "reduction_method": "source was a regular 1299x10 quad grid with a CONTINUOUS UV ramp (no per-card islands), snaking through ~118 strands joined by short connector segments. Uniform row sampling turns those connectors into large visible shards — sample PER STRAND instead."
+  },
+  "known_traps": [
+    "Scripted vertex selections have leaked onto other meshes — hash-verify non-target meshes after edits.",
+    "Index-based mesh diffs fail after vertex-count changes (a symmetrize took the body 6431 -> 6415). Match by proximity instead.",
+    "The two lash objects once shared one mesh datablock; split 2026-08-05 — do not re-link them.",
+    "Lash reduction: never sample the lash grid uniformly. See lash_setup.reduction_method.",
+    "An image DATABLOCK's name and its FILEPATH can disagree indefinitely. 'Yemoja_Color_SkinGrade_v1' actually points at Yemoja_Color_SkinGrade_v2_eyeShade.png. The UI shows the name; only the filepath loads. Check filepath, not name.",
+    "Material Preview may be lit by a STUDIO HDRI instead of the scene world. This file was on 'forest.exr' (green-tinted) with use_scene_world=False, so every world change did nothing and every colour judgement was made through a green filter. If lighting edits appear to have no effect, check Scene Lights / Scene World in the shading dropdown first.",
+    "Duplicate datablocks (Yemoja_Lashes.007, lash_strand_white4.007, Clothes_Normal.png.001, Clothes_MetallicSmoothness.png.001, Clothes_BaseColor_Ocean2.001) will export as SEPARATE Unity materials = extra draw calls. Clean before any FBX export."
+  ],
+  "open_issues": [
+    {
+      "severity": "medium",
+      "item": "Eyebrows read as solid plastic slabs - on the skin material, no alpha, hard edges. Next task; see the 'brows' section."
+    },
+    {
+      "severity": "low",
+      "item": "Eyes: remaining realism gap is the unmodelled lid fold/brow bone (already deferred to AAA) and perfect left-right symmetry from the mirrored atlas. Both are known structural trade-offs, not defects. Do not reopen without a reason."
+    },
+    {
+      "severity": "low",
+      "item": "Eyeball dent residual 0.46mm (from 0.60mm). Deliberately not chased further - see rule 45."
+    },
+    {
+      "severity": "low",
+      "item": "Yemoja_Eye_mat costs +1 draw call. Zero-cost alternative documented in eye_gaze_and_cornea.zero_cost_alternative."
+    },
+    {
+      "severity": "medium",
+      "item": "Eyelids/brow bone not modelled - deferred to AAA (geometry density limit)."
+    },
+    {
+      "severity": "medium",
+      "item": "Hair has 1 non-manifold edge (reintroduced by hole-capping; splitting fixes it)."
+    },
+    {
+      "severity": "medium",
+      "item": "CL_HipBand ~30 self-intersections at the lumbar curve (original 113) - left by choice."
+    },
+    {
+      "severity": "medium",
+      "item": "CL_HipBeads x CL_Shorts ~120 face pairs (original 35)."
+    },
+    {
+      "severity": "medium",
+      "item": "Pre-existing flat shards near the inner eye corner in the ORIGINAL lash mesh."
+    },
+    {
+      "severity": "medium",
+      "item": "Waistband dark patches (historical) - unresolved."
+    },
+    {
+      "severity": "low",
+      "item": "Hair jiggle physics not started."
+    }
+  ],
+  "unity_handoff_notes": [
+    "Eye UVs live in a previously-unused part of the atlas: FBX + colour + metallic/smoothness textures MUST ship as a matched set.",
+    "Lash material is alpha-clipped — needs cutout import settings.",
+    "Lash objects are skinned to mixamorig:Head at weight 1.0 (single-bone rigid follow).",
+    "Garment layering, skin outward: CL_Shorts -> CL_HipBand -> CL_GroinFlap -> CL_Buckle; CL_Top -> CL_TopBand.",
+    "No FBX has been exported since any of the 2026-08-05/06 changes.",
+    "Eyeliner: two new objects (Yemoja_Eyeliner, Yemoja_Eyeliner_Lower) sharing one material - opaque, NO alpha cutout needed, unlike the lash material.",
+    "Eyeliner objects are skinned to mixamorig:Head at weight 1.0, same as the lashes.",
+    "Eyeliner is a close-up-only asset (rule 35) - it will not read in the fight camera. Relevant to CharacterSelect / DisplayModels prefabs.",
+    "Body now has FOUR material slots: Yemoja, Yemoja_Lashes, Yemoja_Lips, Yemoja_Eye_mat (176 eyeball faces).",
+    "Yemoja_Eye_mat is opaque, roughness 0.05 -> URP _Smoothness 0.95. The catchlight depends on the scene's directional light; Blender's HDRI preview understates it.",
+    "Base colour is now Yemoja_Color_SkinGrade_v2_eyeShade.png (v1 kept alongside, unmodified).",
+    "DELETE or exclude the PREVIEW_LIGHTS collection before any FBX export.",
+    "Select-screen key light direction materially changes whether her eyes read as focused - see rule 49."
+  ],
+  "GARMENT_EDITING_PROCEDURE": {
+    "why": "Every garment failure on 2026-08-05 came from treating a two-walled shell as independent points. These rules are not style preferences — breaking them produces visible defects.",
+    "rules": [
+      "1. The garment pieces are DOUBLE-WALLED shells (outer surface + inner lining, ~0.0175 apart). Their two walls sit at DIFFERENT distances from the body by definition.",
+      "2. NEVER fit vertices to an absolute target gap and iterate. Converging every vertex on one number is mathematically identical to collapsing the shell to zero thickness. ONE PASS ONLY.",
+      "3. Move shells with a WIDE-RADIUS VECTOR blur (band 0.12, shorts 0.09), not a scalar blur and not a narrow one. Each vertex moves along the body normal at ITS OWN nearest point; on curvy or concave regions neighbours get different directions and the walls SHEAR past each other. A wide vector field makes the piece translate instead of shear.",
+      "4. NEVER use a plain Shrinkwrap modifier — it projects each vertex independently and flattens the shell.",
+      "5. Clearance against the body must be sampled at FACE CENTRES and EDGE MIDPOINTS, not vertices. Faces are ~0.1 units across; the body pokes through the middle of a face while all four corners sit safely outside.",
+      "6. Verification is FACE-vs-FACE overlap (BVHTree.overlap) compared against the ORIGINAL mesh, never vertex-to-surface distance. Two surfaces intersect while every vertex stays far apart.",
+      "7. Self-intersection is DIRECTIONAL: identify which face is the inner wall (smaller gap) and push the pair APART. Smoothing does not fix it and oscillates.",
+      "8. Any iterative repair must TRACK THE BEST STATE and restore it — corrections accumulate and diverge after the real defects clear. Cap cumulative per-vertex drift (0.018 worked).",
+      "9. Hidden geometry needs no visual-quality constraints. Demanding full body clearance UNDER an opaque band while also requiring the shorts stay inside it left an unsatisfiable 2.6mm window.",
+      "10. Use each vertex's LOCAL nearest band vertex as a ceiling, not the band's global minimum.",
+      "11. Rigid ornaments (CL_Buckle) must be TRANSLATED as one unit. Copying per-vertex displacement from the nearest band vertex deforms them into the band.",
+      "12. ALWAYS capture a baseline screenshot of the ORIGINAL mesh at the same camera before judging an artefact. Three times the suspected defect turned out to be pre-existing.",
+      "13. \"Not intersecting\" is NOT the same as \"on top of\". Zero face overlaps only means two pieces do not cross; one can still sit entirely BEHIND the other. For layering, compare GAP-TO-BODY locally: the outer piece must be further from the body than the inner piece.",
+      "14. Do NOT test occlusion with nearest-point surface normals. On a hanging piece (the groin flap) the nearest point for some vertices is on its INNER face, which reports \"behind\" forever — an iterative push chasing that ran the buckle 0.32 units into empty space.",
+      "15. Compute a rigid shift ANALYTICALLY where possible instead of iterating to a condition. For the buckle: shift = max over its verts of (local max flap gap + margin - own gap), one pass.",
+      "16. Verify group CONTENTS, not group NAMES — the CL_SidePanel_* groups were actually the bead cords. Test what geometry does (how many beads it threads), not where it sits.",
+      "17. NEVER edit geometry while Blender is in Edit or Sculpt Mode. The object-level mesh you read and write is a stale copy; leaving the mode overwrites your edits from the mode-local copy. A hash comparison of the two copies proves nothing — it only says they match at that instant, not what gets written back. FORCE Object Mode at the start of every geometry operation.",
+      "18. bpy.data.is_dirty is UNRELIABLE here — it stays True after a verified successful save. Verify saves by checking the file mtime and size actually changed, not by the operator message.",
+      "19. Check your MEASUREMENT assumptions before believing a bad result. Three false alarms this session: \"closer to tilted than seated\" (neither matched — an exact 0.00000 was the real proof), a phantom 1.13-unit cord jump (assumed vertex indices were contiguous; bmesh deletion renumbers), and a hem-curl test that only looked at the boundary loop and missed the roll inverting.",
+      "20. Nearest-bone classification CUTS ACROSS PHYSICAL OBJECTS and has been wrong four times: cords labelled side panels, strand beads split into LegWrap/Anklet, 23 more labelled Bracelet, and CL_Shorts lumping six pieces. Classify by what geometry DOES (what threads what, what connects to what), never by name or by which bone is nearest.",
+      "21. Neighbour-interpolation fixes need a BOUNDED radius. An unbounded \"or nearest 3\" fallback dragged 55 bracelet and 18 anklet beads along with the hip strands.",
+      "22. An inward-only correction with a NARROW blur is required when a rim is already tighter than target while the band below it is loose — a wide blur averages the two and they cancel. This is what made the first corset-chest fix do nothing.",
+      "23. The clothes mesh has ONE material and one UV atlas. Colour differences (gold buckle, blue cloth, beads) come from the TEXTURE, not material slots — so material index cannot be used to identify a piece, and recolouring means editing the atlas or adding a slot (which costs a draw call).",
+      "24. \"Zero intersections\" between eyelid and eyeball is a DEGENERATE target - it is satisfied by the lid closing over the eye. It only became safe once the socket made the aperture a topological hole. Always verify the aperture is still open (count unobstructed eyeball faces), never trust the intersection count alone.",
+      "25. Compressing a volume against a DISTANCE FIELD collapses it. Squashing loc depth along the body normal flattened the hair tubes into shards. Retracting along each strand axis preserved the tubes but pushed roots sideways into deeper skull. What worked: DELETE the buried geometry (invisible anyway), then clamp and cap the remainder.",
+      "26. Procedural texture bakes: differentiating in texture space crosses UV island borders and invents slopes. Feather the applied slope to zero over ~5px inside the mask - a hard cut makes the cut edge itself the artifact. And every falloff must be smoothstep: a clipped parabola has a derivative discontinuity, and normals ARE the derivative, so the kink draws a ridge.",
+      "27. Do NOT transfer objects between .blend files with bpy.data.libraries.load - the loaded object arrives without its parent and its transform is wrong (observed: scale (0.01,0.01,0.01) instead of (0.72,0.008,0.62), which then made a fit compute a 36.7x scale to compensate). To recover a state, OPEN the file and redo the work there.",
+      "28. Put SANITY ASSERTS on computed transforms before applying them (e.g. assert 0.5 < scale < 2.0, assert |translation| < 0.1). Three separate times a mislocated object produced an absurd fit that was only caught by eye afterwards.",
+      "29. Turning off viewport overlays hides the TRANSFORM GIZMO along with everything else - it will look like gizmos are broken in Edit Mode. Leave overlays ON; hide the armature temporarily instead if a clean screenshot is needed, and restore it afterwards.",
+      "30. Measure the available UV TEXEL DENSITY of a region before designing texture detail for it. The eyeliner attempt burned several passes on a 16x50 texel canvas that could never hold it.",
+      "31. FACE GEOMETRY: build a rough strip and HAND IT TO STEPHANIE to seat by hand. Procedural seating around the eye socket failed three separate ways in one session (nearest-point grabbing the sleeve, normals flipping between three surfaces, chords crossing ridges) and each attempt cost more than it was worth. Set her up - unlock the target, lock everything else, hide the armature, frame the view - and hand over. Do not iterate.",
+      "32. BVHTree.find_nearest returns an UNSIGNED distance. A vertex buried 0.36mm UNDER the skin reports exactly the same clearance as one floating 0.36mm above it. A check built on it will read burial as success (this produced a strip that rendered as a dashed line). Use a SIGNED test: dot(p - nearest_loc, nearest_normal), or ray-cast outward and see if anything is hit.",
+      "33. Yemoja_Body contains SKIN, EYEBALLS AND SOCKET SLEEVES in one mesh. Within ~1mm of the aperture all three are candidates for 'nearest face', and their normals point in genuinely different directions, so as a point moves the nearest face flips and an iterative push along normals DIVERGES (observed runaway to 0.51 units before an assert caught it). Seat radially from the eye centre using ray casts instead - a ray asks a question with an unambiguous answer, nearest-point does not.",
+      "34. The two lash objects have base geometry on OPPOSITE sides of the mirror plane: Yemoja_LashCards_Top_R is on -x, Yemoja_LashCards_Bottom_R is on +x, each with a Mirror modifier generating the other side. Detect the side from mean vertex X against the plane (-0.0044) and pick the matching eye centre. Assuming the wrong one put lash 'roots' 0.2883 from the eye centre against a 0.061 radius.",
+      "35. Face detail is a CLOSE-UP-ONLY investment. At fighting-game camera distance the whole face is a few pixels and no facial feature reads at all, regardless of colour or contrast. Judge facial art on select-screen / portrait / victory-cam framing, and justify its vertex cost on those surfaces - not on gameplay legibility.",
+      "36. 'Arc length' computed as the sum of gaps between consecutive scattered points is NOT a path length. The lash root cloud gave 0.75 by that measure against a true fitted-curve length of 0.11 and a chord of 0.099 - inflated ~7x by zigzag. Fit a smooth curve through the cloud first, then measure and resample along the fit. Sweeping a continuous strip through raw scattered points also inherits every wobble as a visible kink.",
+      "37. LOWER lash roots must be identified by distance to the EYE CENTRE, not distance to skin. Lower lashes splay down toward the cheek, so their tips can sit nearer the skin than their roots do - the same trap as seating the lower lash line to 'nearest skin' and landing on the cheek.",
+      "38. Do NOT derive eyeball gaze by weighting vertices on texture darkness/saturation. At 97 verts the painted pupil is SMALLER THAN THE VERTEX SPACING, so the method finds whatever dark texels happen to sit near a vertex. It reported a 0.0 deg residual on a fix that was ~5.8 deg wrong, and Stephanie caught it by eye. Ask her to SELECT the iris faces and take the direction from those face centres - that is ground truth and costs one message.",
+      "39. Perceived gaze is the iris's position within the VISIBLE APERTURE, not the eyeball's axis. An eye aimed perfectly at the viewer still reads as staring past them if the lids sit such that the iris rides high in the opening. Measure iris-minus-aperture, not the axis alone.",
+      "40. ANATOMY: orbital axes diverge (~23 deg total in humans), so an eye genuinely focused on the viewer has its iris NASAL of its aperture centre - here 6.45 deg. Do NOT 'centre' the iris in the opening; that IS the wall-eyed look. This nearly caused a revert to the divergent state that started the session.",
+      "41. Eyeballs were on the SKIN material with texture-driven roughness, rendering matte - the 'dead doll' look. Eye realism is a MATERIAL problem before a paint problem (see rule on catchlights). Give eyes their own low-roughness material or paint smoothness into their atlas island.",
+      "42. Both eyeballs share an IDENTICAL UV bbox (0.5998-0.7647, 0.1022-0.2669). One paint edit hits both eyes. Vertical shifts are fine; a horizontal shift moves both irises the SAME way in texture space and breaks convergence.",
+      "43. Assert the SIGN of any hand-written rotation matrix before applying it - probe a known vector and check which way it goes. A pitch matrix intended to look down pitched up instead; the assert caught it before it touched the mesh.",
+      "44. In EDIT mode, mesh.uv_layers.active.data and similar base-mesh arrays read as EMPTY - the live data is in the edit-mesh. Use bmesh.from_edit_mesh() and bm.loops.layers.uv.active, or the read silently fails.",
+      "45. Do not chase a residual eyeball dent with more smoothing. Taubin took 0.60mm -> 0.46mm; pushing further erodes the rebuilt corneal curve, and projecting the sclera to a true sphere is what previously drove socket intersections 94 -> 194. The residual is a hand-sculpt call.",
+      "46. When subdividing or editing a symmetric region on BOTH sides, derive the second side by MIRROR-MATCHING the first side's faces, never by re-running the same angular/geometric selection per side. Independent selection gave 194 vs 197 verts and silently broke the mirror symmetry this body was rebuilt to have.",
+      "47. A round shape painted in the atlas renders FACETED if it spans only a few faces - UV interpolates affinely within each face. Before repainting a small feature, check how many faces it covers. The pupil was round in the texture (axis ratio 0.926) and still read as an angular blob at 2 faces across.",
+      "48. Before writing into any atlas RECTANGLE, verify no other UV island intrudes on it - the bbox of an island is not the island. Check every loop whose UV falls inside the rect and confirm it belongs to the intended geometry.",
+      "49. A catchlight landing ON the pupil fragments it and destroys the focused read. Portrait convention puts it in the upper iris around 10 or 2 o'clock, overlapping the limbus. This makes the SELECT-SCREEN KEY LIGHT DIRECTION a gameplay-facing decision: the same mesh reads focused or vacant depending on it.",
+      "50. Eyes not reading as 'set into the face' is usually the MISSING UPPER-LID SHADOW, not the eye itself. Real lids overhang and shade the top of the eyeball; without that the eye reads as a bright sphere resting on a mask. It can be faked in the atlas for zero verts and zero draw calls.",
+      "51. When the WHOLE image is wrong in one direction (too blue, too flat, too dull), check the VIEW TRANSFORM before touching lamps or materials. Colour management is the last step in the chain, so a wrong choice there masquerades as a lighting or material fault. AgX desaturates by design; on a low-saturation blue/white character that reads as a clinical sci-fi cast. Khronos PBR Neutral holds midtone saturation while still rolling highlights off - use it for judging skin and the wet eye. A global cast almost always has a global cause.",
+      "52. Sun lamps are DISTANCE-INDEPENDENT: one rig reads correctly from full-body to single-vertex zoom with no retuning. Area lights fall off with distance squared and must be retuned per framing - the old rig's two fills at 350W and 45W were the fingerprint of exactly that. Working rig = suns. Beauty/screenshot rig = area lights, and only those, because only an area light gives a SHAPED catchlight; a sun's highlight is a dot because the sun is a dot.",
+      "53. A roughness-0.05 cornea MIRRORS THE ENVIRONMENT, not just the lamps. The sky's bright horizon band reflected as a hard bar straight across the pupil - a rule-49 violation with no lamp at fault. Corollary to rule 49: the select-screen ENVIRONMENT/skybox is a gameplay-facing decision too, not just the key-light direction. Verify by zeroing the world strength: if the artefact vanishes, it was the environment.",
+      "54. Ground Albedo in the Sky Texture node creates NO ground and casts NO bounce - it is a parameter inside the atmospheric simulation that brightens the lower sky. With no ground plane the character receives zero light from below, and a figure lit only from above against a black void reads as a specimen in a lab. Fake real ground bounce with a SHADOW-DISABLED sun at NEGATIVE elevation, warm (~4000K), at roughly 10% of key strength. Shadows must be off: a single upward shadow-caster produces horror-movie uplighting, because real bounce arrives from the whole floor at once.",
+      "55. Blender 5.2 API renames that will silently break older scripts: sky_type NISHITA -> MULTIPLE_SCATTERING; dust_density -> aerosol_density; the Background node's OUTPUT socket is named 'Background', not 'Color'. Also view_transform and look are OCIO-driven DYNAMIC enums - bl_rna introspection returns only ['NONE'] even while the current value is 'AgX', so you cannot list them; probe by assignment inside a try/except.",
+      "56. A lamp's Color swatch MULTIPLIES with the Kelvin temperature_color. When use_temperature is enabled, set Color to pure white or the two stack and the hue becomes impossible to reason about. Kelvin runs opposite to intuition: LOWER Kelvin = warmer, because the number describes how hot the emitter physically is and hotter bodies glow bluer.",
+      "57. Keep every non-exporting helper NESTED under PREVIEW_LIGHTS rather than in sibling top-level collections, so the single export-exclusion rule keeps covering everything. A '_Staging' collection was holding two lights and a camera that the PREVIEW_LIGHTS rule did not cover - the rule and the scene had silently drifted apart. Current structure: PREVIEW_LIGHTS > {_review_cam, LIGHTS_Working, LIGHTS_Beauty}.",
+      "58. To flatten exposure falloff across a subject, move the light BACK and turn it UP: distance 4 -> 7 needs about 3x the wattage ((7/4)^2) and buys a far gentler chest-vs-face gradient. A near area light blows out whatever is closest to it - the beauty bounce card at z 4.9 lit her chest two stops hotter than her face until it was moved."
+    ],
+    "reference_mesh_for_baselines": "Backups/Yemoja_MILESTONE_eyesLashesComplete.blend (clothes mesh has kept the same 6909 verts in the same order all session)"
+  },
+  "intersection_baseline_vs_original": {
+    "note": "face-pair counts; original mesh values in Yemoja_MILESTONE_eyesLashesComplete.blend",
+    "CL_HipBand_self": {
+      "original": 113,
+      "now": 30
+    },
+    "CL_Shorts_self": {
+      "original": 30,
+      "now": 11
+    },
+    "pre_existing_not_ours": [
+      "CL_HipBeads x CL_SidePanel (~1800/side)",
+      "CL_Bracelet x CL_SidePanel (~280/side)",
+      "CL_Top x CL_TopBand (189)",
+      "anklets and leg wraps"
+    ],
+    "still_worse_than_original": [
+      "CL_Buckle x CL_HipBand",
+      "CL_Buckle x CL_GroinFlap",
+      "CL_Buckle x CL_HipBeads_C",
+      "CL_HipBeads x CL_Shorts",
+      "(ornaments interpenetrating, hidden inside each other; not coincident surfaces, so no z-fighting)"
+    ]
+  },
+  "bead_assembly": {
+    "structure": "Each island is a single ~9-vertex BEAD, not a strand. 288 strand beads total, in two chains (one per side) plus 2 lone beads at front centre. Bead radius 0.0233, spacing 0.046. Chains are found by proximity clustering of bead centres (link threshold 0.082).",
+    "attachment": "Each side chain is anchored to the band at TWO PEAKS mid-path (front y~-0.31 z~0.42; back y~+0.46 z~0.59), embedded ~0.005 into the band. Its two graph ENDPOINTS are the free-hanging bottom ends — never attach those.",
+    "identifying_a_strand_bead": "A strand bead is one THREADED BY A CORD IN THE ORIGINAL MESH (centre within 0.035 of cord geometry in Yemoja_MILESTONE_eyesLashesComplete). Do NOT use group names or proximity: nearest-bone classification filed 23 strand beads as CL_Bracelet because in A-pose her hands hang beside her thighs.",
+    "cords_rebuilt_2026_08_06": {
+      "why": "the modeller's cords were irregular (valence 4-8, radius 0.0089 median but 0.0502 max) and threw flat slivers past the beads; spikiness 0.97 max was present in the ORIGINAL.",
+      "method": "Build the path from BEAD CENTRES (they lie on the cord axis by definition), order them by proximity walk, then sweep a 3-vertex ring along it with a parallel-transport frame (cannot twist or kink). Radius 0.0054. One ring per bead.",
+      "result": "4 cords x 72 rings x 3 verts = 864 verts, 1 island each, max edge 0.067, and every one of the 288 bead centres sits exactly on the axis (bead-to-surface 0.0027 = the triangular inradius, identical for median/p90/max).",
+      "skinning": "new cord vertices take bone weights from their nearest bead vertex."
+    },
+    "CRITICAL_the_buckle_fangs": "The two hanging fangs under the buckle (2 islands, 24 verts each, x +/-0.05..0.257, z 0.008..0.382) were misfiled as CL_HipBeads_C (\"2 lone beads at front centre\") by the nearest-bone pass. EVERY bead operation dragged them around for a whole session. They are now CL_BuckleFangs and CL_HipBeads_C is deleted. Any bead-shape filter (5-20 verts, compact) MUST exclude geometry near the buckle."
+  },
+  "mobile_budget": {
+    "character_total_effective_verts": 24165,
+    "eyeliner_decal_effective_verts": 226,
+    "body_verts": 6663
+  },
+  "BASELINE_WARNING": {
+    "what_changed": "On 2026-08-06 the four bead cords were REBUILT, taking Yemoja_Clothes from 6909 to 7470 vertices. Vertex indices no longer align with Backups/Yemoja_MILESTONE_eyesLashesComplete.blend.",
+    "consequence": "Index-based diffs against that milestone NO LONGER WORK for the clothes mesh. Use proximity matching (KDTree on the older mesh) instead — the same approach used when a symmetrize changed the body from 6431 to 6415 verts.",
+    "body_mesh": "Yemoja_Body is still index-aligned with the milestone (6415 verts)."
+  },
+  "CRITICAL_mirrored_uv_atlas": {
+    "measured": "body left half uses 1,567,531 texels; right half uses the SAME 1,567,531. 100% overlap.",
+    "consequence": "Anything painted or baked into the skin atlas appears on BOTH sides. Asymmetric skin detail is impossible on mobile. Per-eye texture correction is impossible.",
+    "cost_this_session": "The eyelid/brow normal bake could not be made seam-free and was REMOVED; Yemoja_Normal.png restored byte-identical to the modeller original (MD5 verified).",
+    "check_before_any_texture_edit": "stamp left-half and right-half faces into separate texel masks and compare - do not assume the atlas is unmirrored."
+  },
+  "eye_construction": {
+    "socket_built": "Aperture cut by deleting FACES bounded by the lash-root ring (vertex-based cutting gave 8 disconnected boundary fragments; face-based gave one closed 16-vert loop, all valence 2). Two sleeve rings extruded at 15deg and 33deg from the rim, wrapping away from the APERTURE centre (not the gaze axis - the aperture is not centred on it).",
+    "sleeve_placement": "RAY-CAST against the real eyeball mesh, never a fitted sphere. Sculpting left the eyeball non-spherical (radius 0.0584-0.0636); sphere-based placement put the sleeve inside the real surface and drove intersections 94 -> 194.",
+    "cornea": "radius of curvature 0.650R, limbus half-angle 29.18deg, centre offset 0.4434R, apex protrusion 0.0934R (9.3% of eye radius - derive it, do not guess).",
+    "gaze_axis": "derive from where the IRIS IS PAINTED (sample the atlas at eyeball UVs), not from where the surface bulges - the latter locks onto sculpting defects.",
+    "lid_margin_measurement": "NEVER derive the lid margin from boundary/rim topology now that a socket exists - the socket rim is also a boundary and reads ~24deg too high (+37.7/-45.1 vs the true +13.6/-20.6). Measure it from which eyeball faces are actually unobstructed by skin.",
+    "lids_not_modelled": "No lid thickness, crease or brow shelf. Blocked by density: median lid-zone edge 0.0165 = 27% of the 0.061 eye radius, where a lid fold needs 2-3 loops across ~15%. Deferred to AAA - see README_AAA_BASE section added 2026-08-06."
+  },
+  "SESSION_INTEGRITY_WARNING": {
+    "incident": "2026-08-07: the live session silently reverted to a PRE-socket state. Vertex counts dropped from 6475/7472/4620 (body/clothes/hair) back to 6415/6909/4853, and several hours of saves wrote that older state over Yemoja_WORKING_shortsFitBumSmooth.blend.",
+    "detected_by": "Stephanie noticing missing work; confirmed by comparing live vertex counts against the milestone file.",
+    "recovery": "Opened Yemoja_MILESTONE_eyeSocket_pearlBeads_locFix.blend and started a NEW working file (Yemoja_WORKING_v2_socketPearlLoc.blend). Only the lower-lash fit was lost and was redone.",
+    "RULE": "At the START of every session verify live vertex counts before any work. Current expected: body 6663 (eyeballs 191 each), clothes 7472, hair 4620, each lash 1296, eyeliner upper 69, eyeliner lower 44. A mismatch means stale data - stop and reopen the correct milestone.",
+    "abandoned_file": "Yemoja_WORKING_shortsFitBumSmooth.blend - do not reuse."
+  },
+  "lower_lash_fit": {
+    "method": "Scale X to match the UPPER lash root span, scale Y to undo the flattening, then translate Y/Z to seat the roots on the LOWER LID MARGIN.",
+    "lid_margin_definition": "skin vertices lying within 0.012 of the eyeball surface AND below the eye centre. Do NOT seat to \"nearest skin\" - from below the eye the nearest skin is the CHEEK, which parks the lashes there.",
+    "values_applied": {
+      "scale": [
+        1.0526,
+        2.2,
+        1.0
+      ],
+      "translation": [
+        0.0,
+        0.03005,
+        -0.01121
+      ],
+      "root_x_span_upper": 0.3819,
+      "root_x_span_lower_after": 0.3861,
+      "root_to_margin_median": 0.00483
+    },
+    "hand_finished_by_stephanie": true,
+    "current_transforms": {
+      "Yemoja_LashCards_Top_R": {
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "world_loc": [
+          -0.1399,
+          0.0063,
+          6.8713
+        ],
+        "verts": 1296
+      },
+      "Yemoja_LashCards_Bottom_R": {
+        "scale": [
+          0.72489,
+          0.00826,
+          0.61683
+        ],
+        "world_loc": [
+          0.1323,
+          0.0499,
+          6.8308
+        ],
+        "verts": 1296
+      }
+    },
+    "KNOWN_ISSUE": "The bottom lash object carries a Y scale of ~0.004-0.008, flattening the cards into a plane. It originates from the bottom lashes being a squashed duplicate of the top set. The 2.2x is compensating at object level. Editing its vertices through that scale makes the Move gizmo behave very unevenly between axes. Clean fix: bake the scale into the mesh data so the object sits near scale 1."
+  },
+  "makeup_layer": {
+    "architecture": "Makeup is a TEXTURE VARIANT, not a runtime layer. Keep Yemoja_Color_SkinGrade_v1.png pristine and never paint into it; author an RGBA overlay; composite the two into a variant base-colour PNG that Unity swaps per skin. Zero runtime cost - no extra texture sample, shader branch, draw call or geometry.",
+    "files_created": [
+      "Yemoja_Makeup_CatEye_Black.png (the reusable RGBA layer)",
+      "Yemoja_Color_Makeup_CatEyeBlack.png (natural composited with the layer)"
+    ],
+    "status": "SUPERSEDED by the eyeliner decal mesh (2026-08-08) - see eyeliner_decal. The texture-variant approach remains valid for makeup that is NOT a crisp line (blush, shadow washes), which the atlas density can carry.",
+    "BLOCKER_uv_resolution": "The upper lid margin occupies only ~16 x 50 TEXELS in the skin atlas. The lash line is ~50 texels long. No eyeliner painted into the skin atlas can be crisp at that density - procedurally OR by hand. Measure the available UV space BEFORE designing any detail for a region.",
+    "recommended_solution": "A separate makeup DECAL MESH: a thin strip over the lid with its own material and its own UV space, so the liner gets a full texture region. Also not mirrored, so asymmetric designs become possible. Cost ~40-80 verts plus one draw call. Hide the object for the natural face; swap its texture per skin."
+  },
+  "eyeliner_decal": {
+    "why_a_decal": "The upper lid margin occupies only ~16x50 texels in the skin atlas and the body atlas is 100% mirrored, so no painted eyeliner can be crisp or asymmetric. A decal mesh gets its own UV space and is not mirrored. Four texture passes were wasted proving this first - see rule 30.",
+    "objects": [
+      "Yemoja_Eyeliner (upper)",
+      "Yemoja_Eyeliner_Lower"
+    ],
+    "construction": "Path derived from lash root points, fitted with a robust degree-4 polynomial in t (outliers beyond 2.5x median residual dropped - they are the pre-existing flat shards at the inner corner), resampled evenly by arc length, then swept as a 2-vertex-wide strip. Upper path 25.9mm over 25 rings plus a 6-ring wing; lower path 19.0mm over 22 rings.",
+    "seating": "Radially outward from the eye centre via ray casts, then HAND-FITTED by Stephanie (see rule 31). She settled on ~0.9mm clearance, deeper than the 0.36mm first tried.",
+    "material": "Yemoja_Eyeliner_mat, SHARED by both objects - one draw call for all four lines. FINAL: base colour #8FC4DA pale ice-blue (linear 0.2747, 0.5520, 0.7011), roughness 0.15, metallic 0. URP equivalent: _Smoothness 0.85. Needs NO alpha texture - the mesh silhouette is the shape, unlike the lash cards whose shape is painted into their texture. Material kept to Base Color + Metallic + Roughness ONLY so the Blender preview matches what URP Lit can actually reproduce - a Coat layer looks better in Blender and cannot ship.",
+    "skinning": "single vertex group mixamorig:Head at weight 1.0, Mirror BEFORE Armature - same setup as the lash cards.",
+    "mirror": "Mirror modifier referencing Yemoja_Body, use_mirror_merge False. Upper base half is -x, lower base half is +x (see rule 34).",
+    "colour_rationale": "Black gave the crispest cat-eye but framed a teal iris with a hard graphic. Pure white FAILED - it merges with the white lashes and the wing shape disappears. Pale ice-blue separates from both the warm skin and the warm-white lashes, and sits next to the iris hue so the eye reads as one cool zone. Trade-off accepted: the upper and lower lines now carry similar visual weight rather than the upper wing dominating.",
+    "sheen_note": "Roughness 0.15 barely reads in a static frame: the strip is near-flat so its normal hardly varies across 1-2mm and there is no angle range for a highlight to land in. It pays off in MOTION (head turns on select screen / victory poses). To make it read statically, roll the strip's outer edge a few degrees off the lid - geometry change, hand-fit per rule 31. On mobile with no reflection probe the sheen comes almost entirely off the main directional light, so the select-screen lighting rig decides whether it shows."
+  },
+  "eye_gaze_and_cornea": {
+    "session": "2026-08-08",
+    "final_aim": "Eyes converge on a point 3.8 units (~0.9m) in front of the face at eye level, then pitched 8.0 deg DOWN from level. Convergence 3.78 deg total. Both eyes symmetric.",
+    "verified_by": "Stephanie hand-selected the 28 iris faces on the +x eye; direction taken from those face centres. Result: iris 0.05 deg vertical, 0.29 deg BELOW its aperture centre, 6.45 deg NASAL of it.",
+    "cornea": "Rebuilt from the documented ratios: centre offset 0.4434R along gaze, radius of curvature 0.650R, limbus half-angle 29.18 deg, smoothstep blend over a 6 deg band. Achieved apex protrusion 1.30mm vs 1.35mm target, symmetric to 0.01mm.",
+    "dent": "Taubin smoothing (lambda 0.50 / mu -0.53, 6 pairs), boundary pinned. 0.60mm -> 0.46mm. NOT fully removed - deliberately stopped, see rule 45.",
+    "material": "Yemoja_Eye_mat - a copy of the skin material with the roughness link BROKEN and set to 0.05, IOR 1.376, metallic 0. Keeps sampling the same base-colour atlas so the iris paint is unchanged. 176 faces. Costs +1 draw call.",
+    "zero_cost_alternative": "Skin roughness is texture-driven and the eyes own a 161x155 texel island, so the same wetness could be painted into Yemoja_MetallicSmoothness.png at UV 0.5998-0.7647 / 0.1022-0.2669 for no extra draw call. VERIFY nothing else uses those texels first.",
+    "still_open": "Eyes read as unfocused even once wet - pupil definition and a hard catchlight are the suspects, not iris position.",
+    "tessellation": "Iris region subdivided once: 97 -> 191 verts PER EYE, symmetric. Body 6475 -> 6663. Reason: the pupil spanned only ~2 faces, and UV interpolates affinely WITHIN a face, so a round pupil in the atlas rendered as a faceted polygon. Face set chosen by MIRROR-MATCHING Stephanie's 28 selected iris faces (match error 8.6e-5), not by computing an angular region per eye - doing it per eye gave 194 vs 197 and broke mirror symmetry. Leaves 42 n-gons at the region border; these triangulate on FBX export. Rim untouched at 16 boundary verts per eye, so the socket fit is unaffected.",
+    "lid_shadow_and_sclera": "Painted into the atlas, no geometry: soft lid shadow down to 58% brightness at the lash line, smoothstep to none by 45% down the eye; sclera multiplied by 0.90. World +Z maps to UV +V (0.011, 0.9999) on the eyeball island, so the gradient runs straight up the V axis. Verified that all 1424 loops inside the island rect (u 0.5998-0.7647, v 0.1022-0.2669) belong to eyeballs - nothing else shares those texels. Written to Yemoja_Color_SkinGrade_v2_eyeShade.png; v1 untouched on disk.",
+    "status": "CLOSED 2026-08-08 for the mobile mesh.",
+    "what_actually_fixed_the_dead_look": "In order of effect: (1) the eyes were on the SKIN material and rendered matte - a wet low-roughness material was the single biggest gain; (2) a hard directional key light to give a real catchlight - Blender's HDRI preview understates this badly; (3) lid shadow + sclera knock-down for orbital depth. Iris AIM was never the problem after the first correction, despite three rounds of chasing it."
+  },
+  "brows": {
+    "status": "NEXT TASK - not started",
+    "geometry": "Two separate connected components INSIDE Yemoja_Body (not their own objects), 85 verts / 67 faces each, 35 boundary edges each (open shells). Extent 45.5 x 42.0 x 16.4 mm. Centroids (-0.1507, 0.0055, 6.9613) and (0.1420, 0.0055, 6.9613). Perfectly symmetric.",
+    "material": "Material slot 0 = 'Yemoja' (the SKIN material). Same trap the eyeballs were in - they inherit skin roughness and have no alpha, which is why they read as solid plastic slabs with hard edges.",
+    "uv": "Both brows share ONE island, identical bbox u 0.0082-0.0402, v 0.6025-0.8116 = 66 x 428 texels. Long and thin: fine along the brow's length, only ~66 px ACROSS its width. Mirrored like the rest of the atlas, so left and right can never differ.",
+    "known_problem": "They read as hard-edged slabs sitting on the forehead - no strand detail, no soft edge, no alpha. Same class of problem as the eyes before this session: material and edge treatment, not silhouette.",
+    "measure_before_designing": "66 texels across the width is the number that decides whether painted strand detail can ever be crisp - check it against rule 30 (the eyeliner atlas lesson) BEFORE attempting a painted solution."
+  },
+  "preview_lighting": {
+    "added": "2026-08-08",
+    "purpose": "Viewport-only rigs. NEVER exported. All nested under PREVIEW_LIGHTS so one exclusion rule covers everything.",
+    "structure": "PREVIEW_LIGHTS > _review_cam, LIGHTS_Working (suns), LIGHTS_Beauty (area lights)",
+    "toggle": "Outliner checkbox = Exclude from View Layer on the child collection. Excluded collections cost nothing.",
+    "scene_level_caveat": "World/sky and view transform are SCENE settings, not per-collection. Swapping rigs does NOT swap those.",
+    "scene_scale_note": "Model is 7.398 units tall, head 1.05, interocular 0.2614 -> approx 4.2x human scale. All area-light distances/sizes are in that scale.",
+    "view_transform": {
+      "transform": "Khronos PBR Neutral",
+      "look": "None",
+      "exposure": 0.0,
+      "why": "AgX desaturated her into a sci-fi cast; Standard clips the wet-eye highlight to flat white"
+    },
+    "world": {
+      "node": "Sky Texture",
+      "sky_type": "MULTIPLE_SCATTERING",
+      "sun_disc": false,
+      "sun_elevation_deg": 30.0,
+      "sun_rotation_deg": -35.0,
+      "air_density": 0.45,
+      "aerosol_density": 3.0,
+      "ozone_density": 0.6,
+      "ground_albedo": 0.45,
+      "background_strength": 0.2,
+      "why_air_density": "Rayleigh scattering - this is literally the blue-sky knob. Default 1.0 was the main source of the blue cast."
+    },
+    "LIGHTS_Working": {
+      "type": "all SUN - distance independent, valid at any zoom, never needs retuning",
+      "PREVIEW_Key": {
+        "az": 35,
+        "el": 30,
+        "W_per_m2": 4.2,
+        "K": 5200,
+        "angle_deg": 3,
+        "note": "front-upper-LEFT of a -Y viewer -> 10 o'clock catchlight per rule 49"
+      },
+      "PREVIEW_Fill": {
+        "az": -50,
+        "el": 20,
+        "W_per_m2": 0.55,
+        "K": 5800,
+        "angle_deg": 60
+      },
+      "PREVIEW_Rim": {
+        "az": 200,
+        "el": 35,
+        "W_per_m2": 1.5,
+        "K": 5600,
+        "angle_deg": 8
+      },
+      "PREVIEW_Bounce": {
+        "az": 25,
+        "el": -35,
+        "W_per_m2": 0.45,
+        "K": 4000,
+        "angle_deg": 90,
+        "shadows": false,
+        "note": "fake ground bounce - see rule 54"
+      }
+    },
+    "LIGHTS_Beauty": {
+      "type": "all AREA/RECTANGLE - shaped catchlight, soft wrap. Tuned for HEAD-AND-SHOULDERS framing; full-body needs distances scaled up.",
+      "BEAUTY_Key": {
+        "az": 30,
+        "el": 30,
+        "dist": 4.5,
+        "size": [
+          3.5,
+          4.5
+        ],
+        "W": 270,
+        "K": 5400
+      },
+      "BEAUTY_Fill": {
+        "az": -55,
+        "el": 10,
+        "dist": 6.0,
+        "size": [
+          6.0,
+          6.0
+        ],
+        "W": 40,
+        "K": 6000
+      },
+      "BEAUTY_Rim": {
+        "az": 205,
+        "el": 32,
+        "dist": 4.5,
+        "size": [
+          1.4,
+          5.0
+        ],
+        "W": 260,
+        "K": 6800,
+        "note": "deliberately the COOLEST light - warm key vs cool rim reads as depth"
+      },
+      "BEAUTY_Bounce": {
+        "az": 5,
+        "el": -28,
+        "dist": 7.0,
+        "size": [
+          8.0,
+          4.0
+        ],
+        "W": 140,
+        "K": 4200,
+        "shadows": false
+      }
+    },
+    "azimuth_convention": "az 0 = light travels toward +Y (source in front of a -Y-facing viewer). POSITIVE az swings the source to the viewer's LEFT. NEGATIVE elevation puts the source BELOW the horizon, shining up. Always assert the resulting travel vector's signs before applying (rule 43)."
+  }
+}

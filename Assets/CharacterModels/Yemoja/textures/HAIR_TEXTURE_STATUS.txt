@@ -1,0 +1,62 @@
+YEMOJA HAIR — TEXTURE STATUS
+=============================
+
+PLACEHOLDER (not production quality) — rebuild later:
+  - Yemoja_Hair_Normal_PLACEHOLDER.png (isotropic curl bump)
+  - Yemoja_Hair_ScalpCurl_Normal_PLACEHOLDER.png
+
+WHY PLACEHOLDER:
+  The loc mesh UVs are not consistently oriented down each loc's length,
+  so a directional 'ropey loc twist' normal map lands inconsistently
+  (showed as horizontal rings). The current maps are non-directional
+  curl bump as a workaround so the hair reads as textured, not flat.
+
+REAL FIX (production):
+  1. Re-UV-unwrap each of the 17 locs so length runs consistently down V.
+  2. Bake/generate a directional loc-twist normal (ropey coil down-length).
+  3. Add proper baby-hair treatment along the front hairline (alpha cards
+     or modeled wisps) — a normal map alone cannot fix that flat silhouette.
+  4. Consider a dedicated hair shader in Unity (anisotropic highlight).
+
+SOLID / KEEP (production-ready, not placeholder):
+  - The loc bone rig: 51 bones (3 per loc x 17 locs), clean weights,
+    verified isolation. This carries forward to the real hair too.
+
+
+BABY HAIRS (front hairline) — PLACEHOLDER:
+  Current: smooth 'curtain' pull-down of the 35 front hairline edge verts
+  (deeper at center, tapering at temples). Softens the hard cap edge only.
+  This is NOT real baby hairs — cannot create wispy curl strands by moving
+  edge verts.
+  MOBILE-CORRECT PRODUCTION FIX: bake baby-hair wisps into the base color +
+  normal map along the hairline during the hair rebuild (on clean UVs).
+  Avoid alpha cards on mobile (transparency/overdraw cost); bake-to-texture
+  is the mobile-right method.
+
+HAIR BONE RIG — MOBILE-OPTIMIZED (production for mobile):
+  Reduced from 3 bones/loc (51) to 2 bones/loc (34 total) for mobile budget.
+  Weighty 2-segment sway, matches 'heavy medium loc' intent. Isolation verified.
+  Total skeleton now ~112 bones (was 129).
+
+
+BABY HAIRS — DECISION (updated):
+  Edge-vert nudging (jitter AND smooth curtain) both FAILED — created gaps
+  and spikes because dragging the boundary stretches the edge faces.
+  Reverted to the clean flat hairline. Baby hairs are DEFERRED entirely to
+  the production hair rebuild, done by baking wisp detail into base color +
+  normal textures on clean UVs. Do NOT attempt via edge-vert moves again.
+
+
+=== UPDATE 2026-07-30: LOC UVs REBUILT + DIRECTIONAL NORMAL (production base) ===
+  - All 17 loc UVs re-unwrapped via analytic tube projection (PCA axis).
+    Every loc now maps length->V at correlation >=0.993 (was 10/17 near-random).
+    Each loc gets its own U-band so texture space doesn't overlap.
+  - Yemoja_Hair_Normal.png regenerated as a DIRECTIONAL loc-twist normal
+    (spiral coils running down each loc's length). Replaces the isotropic
+    placeholder. This is now a CORRECT production base, not a workaround.
+  - Old _PLACEHOLDER normal files deleted (superseded).
+
+  STILL NEEDS A HUMAN ARTIST (not blind-scriptable):
+    - Baby hairs baked into hairline base-color + normal (reference: afro edges)
+    - Final art polish: color variation, root darkening, highlight tuning
+    - The procedural twist is a solid base; a texture artist would refine it.
