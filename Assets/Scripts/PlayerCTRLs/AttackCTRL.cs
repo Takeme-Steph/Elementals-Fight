@@ -29,9 +29,20 @@ public class AttackCTRL : MonoBehaviour
 
     // Called by PlayerStateMachine when it enters the Attacking state -
     // the state machine already guarantees this is only called when an
-    // attack is actually allowed to happen, so no guard needed here.
+    // attack is actually allowed to happen, so no guard needed for match state here.
     public void Attack(bool isHeavy)
     {
+        // Some characters (e.g. Ninja, pending his model replacement) still ship with
+        // no hitbox marker rig at all - attackColliders[0] used to throw an
+        // IndexOutOfRangeException on their very first attack. Degrade to a
+        // logged no-op instead so a missing rig fails loudly in the console
+        // rather than crashing the match.
+        if (attackColliders == null || attackColliders.Length == 0)
+        {
+            Debug.LogError($"{name}: AttackCTRL.attackColliders is empty - this character is missing its hitbox marker rig, attack will deal no damage.");
+            return;
+        }
+
         // initiate attack and get hitboxes that overlap with the attack hitboxes
         Collider col = attackColliders[0];
         Collider[] cols = Physics.OverlapBox(col.bounds.center, col.bounds.extents, col.transform.rotation,
