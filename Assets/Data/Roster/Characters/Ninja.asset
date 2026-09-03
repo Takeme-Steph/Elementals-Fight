@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f322d04d6a841f41b7af431494012db, type: 3}
+  m_Name: Ninja
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterDefinition
+  id: 6
+  displayName: Ninja
+  pantheon: Placeholder
+  domain: Shadow Step
+  title: Walker Between Realms
+  lore: 'A stand-in fighter from the original build. Replace this entry with a real
+    deity: name, lore, colours and stats all live on this asset.'
+  playstyle: 1
+  element: 3
+  primary: {r: 0.7529412, g: 0.5176471, b: 0.9882353, a: 1}
+  secondary: {r: 0.8862745, g: 0.9098039, b: 0.9411765, a: 1}
+  glow: {r: 0.65882355, g: 0.33333334, b: 0.96862745, a: 1}
+  deep: {r: 0.11764706, g: 0.039215688, b: 0.22745098, a: 1}
+  power: 6
+  speed: 9
+  range: 3
+  defense: 4
+  mobility: 9
+  icon: {fileID: 0}
+  displayPrefab: {fileID: 6517490843920987122, guid: 75f93ced6c6a3934baed7bd097f3ec78,
+    type: 3}
+  playablePrefab: {fileID: 4550845846662401962, guid: 1a66ee4a84b424a4992154e6ed7df798,
+    type: 3}
+  displayAnimator: {fileID: 9100000, guid: 02508ee698d6f7b4abad557c591403f6, type: 2}
+  isPlaceholder: 1

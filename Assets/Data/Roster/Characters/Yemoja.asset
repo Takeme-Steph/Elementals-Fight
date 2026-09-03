@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f322d04d6a841f41b7af431494012db, type: 3}
+  m_Name: Yemoja
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterDefinition
+  id: 1
+  displayName: Yemoja
+  pantheon: Yoruba
+  domain: Ocean Mother
+  title: Mother of the Waters
+  lore: Born where the river meets the sea, Yemoja carries the weight of every tide.
+    Her trident calls the deep to rise; her shield turns the storm itself aside.
+  playstyle: 4
+  element: 0
+  primary: {r: 0.21960784, g: 0.9098039, b: 1, a: 1}
+  secondary: {r: 0.9607843, g: 0.9411765, b: 1, a: 1}
+  glow: {r: 0.13333334, g: 0.72156864, b: 0.84705883, a: 1}
+  deep: {r: 0.019607844, g: 0.16470589, b: 0.2901961, a: 1}
+  power: 7
+  speed: 5
+  range: 6
+  defense: 9
+  mobility: 4
+  icon: {fileID: 0}
+  displayPrefab: {fileID: 4150317885906008525, guid: d0ce7fd2a0c52b942aee8071f190104f,
+    type: 3}
+  playablePrefab: {fileID: 2537313597208049919, guid: 8c3b6a0eb34869e4aac0c2bcf6303cf4,
+    type: 3}
+  displayAnimator: {fileID: 9100000, guid: a6a9685b2aad65447992887f927623c2, type: 2}
+  isPlaceholder: 0
