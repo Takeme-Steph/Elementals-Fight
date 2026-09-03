@@ -32,6 +32,12 @@ Read `TASKS.md` at the start of a session for the current queue. If a task turns
 - `Assets/Scripts/GameManager/` — scene/match flow: `SceneHandler.cs` (round/match state, safe zones, health bar wiring — lives on a GameObject literally named `"GameManager"` in each scene; multiple scripts look it up by that exact name via `GameObject.Find`, so don't rename it without updating every lookup), `LoadCharacter.cs`, `MatchUIManager.cs`, `PauseManager.cs`, `CameraCTRL.cs`.
 - `Assets/Scripts/PlayerSelection.cs` — character-select screen; stores picks via `PlayerPrefs` (`selectedCharacter`, `selectedOpponent`) before loading the fight scene.
 
+## Character rig/eye standards (Blender pipeline)
+- `BlenderTools/README_rig_conventions.md` — project-wide bone-naming convention (Blender-style `.L`/`.R` suffixes, not Mixamo-style `mixamorig:LeftArm`/`mixamorig:RightHand`) and why it exists: Blender's mirror-aware tools (Mesh > Symmetrize, `bpy.utils.flip_name`) require it, and Mixamo-style names silently break them.
+- `BlenderTools/README_eye_standard.md` — project-wide, character-agnostic standard for how eyes are built (geometry, pivot, UV handedness, texture, bones, gaze), applies to every character, not just Yemoja.
+- **Caveat that fails silently, worth knowing before trusting any import:** Unity's Humanoid auto-mapper does not leave `LeftEye`/`RightEye` empty when a character has no eye bones — it binds them to the nearest plausible transforms instead (on one Yemoja import it bound both eyes and the jaw to hair bones) and still reports `isHuman = true`. Verifying an avatar means opening `Rig > Configure` and reading what each humanoid slot actually points at, not just checking that the slot is populated or that `isHuman` is true.
+- These are reference docs, not restated here — if either standard changes, update the doc, not this file.
+
 ## Conventions already established in this codebase
 - Favor `TryGetComponent<T>()` over `GetComponent<T>()` + null check.
 - Log missing-required-component errors via `Debug.LogError(...)` rather than throwing.
