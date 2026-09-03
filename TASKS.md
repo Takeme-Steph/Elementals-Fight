@@ -336,4 +336,395 @@ Not fixed here because it needs a design call, not a blind patch: Ninja is also 
 **Done:** Took the recommended option (a): `Attack()` now returns early with a `Debug.LogError` naming the offending GameObject when `attackColliders` is null or empty, instead of indexing into it unguarded. Left Ninja's prefab itself untouched - building him a real `H_*`/`A_*` marker set is still explicitly deferred to the blocked full-model-replacement task, since it'd be throwaway work otherwise. This only stops the crash; Ninja's attacks still deal no damage until that replacement lands, which is the intended interim behavior per the task's own recommendation.
 
 ---
+### [x] Shared EarthMageAnimCTRL Walk state was accidentally repointed at Yemoja's clip
+**Why:** Found by Claude Code while reviewing the accumulated Yemoja v3-v6 import work below, not part of any task's described scope. `EarthMageAnimCTRL.controller` is the Animator Controller shared by EarthMage, Ninja, and WarriorPrincess (Yemoja has her own dedicated `YemojaAnimCTRL`, added back on the original playable-prefab task). Diffing the controller's actual LFS-smudged content against HEAD (not just the LFS pointer, which is all `git diff` shows by default) turned up a real, substantive change buried inside what looked like routine resave noise: the Walk state's `m_Motion` had been repointed from `MageWalk.anim` to Yemoja's `SwordAndShieldWalk.fbx` clip. Almost certainly an accidental drag in the Animator window during a Yemoja editing session - nothing in this session's task history describes touching the shared controller, and every other line in the file matched the pre-edit content exactly.
+
+Left as committed, every character sharing that controller (not just Yemoja) would have played Yemoja's sword-and-shield walk animation instead of their own the instant they walked.
+
+**Acceptance criteria:** `EarthMageAnimCTRL.controller`'s Walk state Motion points back at `MageWalk.anim`; nothing else in the controller changes.
+
+**Relevant files:** `Assets/Animations/AnimCTRLs/EarthMageAnimCTRL.controller`.
+
+**Done (2026-09-03):** Reverted the Motion reference. Verified against the pre-edit content by fetching the historical LFS object directly (`git show HEAD:<path> | git lfs smudge`, since the local LFS cache didn't have that historical blob checked out) and diffing it against the corrected working copy - identical except for a handful of trailing-whitespace-only bytes on unrelated empty YAML fields, which don't affect parsing. Branch `task/fix-earthmage-walk-anim-miswire`, committed on its own ahead of the Yemoja work since it's a correctness bug with a much bigger blast radius than the task it was hiding inside.
+
+---
+### [x] Commit the Yemoja_v2 material-location fix (one .meta change, already applied live)
+**Why:** While wiring Yemoja_v2's six materials, Cowork set the FBX importer's `materialLocation = External` to bind them to the authored `.mat` assets rather than embedding copies. That worked, but this Unity version has **deprecated** that setting and logs it as a repeating *exception* (not a warning) on every import touch - `MaterialLocation.External is obsolete. External Material Location is no longer supported.` This is the console error Stephanie spotted after the branch work; it was Cowork's doing, not Claude Code's, and it was cosmetic - nothing rendered or behaved wrongly because of it.
+
+**Fixed live (2026-08-12, post-merge):** re-asserted all six entries in the importer's external-object remap table, then set `materialLocation = InPrefab`. The remap table is the modern supported mechanism for binding external material assets; `materialLocation` is the obsolete one. Verified after a full reimport: all 8 material slots still resolve to `Assets/CharacterModels/Yemoja/materials/*.mat` (NOT to copies embedded in the FBX - that distinction matters, since embedded copies would silently stop tracking edits to the `.mat` files), console completely clean, avatar still `isHuman = true` with 52 mapped slots, `globalScale` still 0.23985990.
+
+The only file changed is `Assets/CharacterModels/Yemoja/models/Yemoja_v2.fbx.meta`.
+
+**Also re-verified on the merged `main` after the cherry-picks, all passing:**
+- Playable prefab is based on `Yemoja_v2.fbx`; 12/12 hitbox + trident markers resolve to real bones, 0 stranded at root.
+- `attackColliders[0]` = `A_Trident`, non-null. 9 material slots, 0 missing.
+- Retargeting live: sampling the idle clip moves hips 0.221, rotates `mixamorig:HandIndex2.L` by 63.8 degrees (proving the left-finger mapping fix survived the merge), and the trident-to-hand distance holds at 0.1574 (it rigidly follows the hand).
+- `FightScene` and `CharacterSelect` still reference the playable and display prefabs by GUID - roster arrays untouched.
+- Claude Code's `AttackCTRL` length guard is present, so Ninja's missing hitbox rig no longer throws.
+
+**Acceptance criteria:** commit the single `.meta` change. Nothing else to do.
+
+**Deliberately NOT done - flagging rather than deciding:** the model file is still named `Yemoja_v2.fbx`. The old `Yemoja.fbx` has been deleted so the plain name is free, and a Unity rename preserves the GUID, so the rename is safe - but it would invalidate the verification pass above and needs its own reimport + `isHuman` re-check afterwards. Low benefit, non-zero risk; left as Stephanie's call rather than bundled in silently.
+
+**Relevant files:** `Assets/CharacterModels/Yemoja/models/Yemoja_v2.fbx.meta`.
+
+**Done (2026-09-03):** By the time this session picked the queue back up, `Yemoja_v2.fbx.meta` had already been overwritten several more times live (v3 through v6 plus the 2026-09-02 material correction all landed on top of it before anything got committed) - so this task's original single-.meta scope no longer exists as an isolated diff. Committed as part of the combined Yemoja v2->v6 rebuild commit instead; see the v3/v4/v5/v6 entries below for the full record and the shared "Done" note. Branch `task/yemoja-v3-v6-import-review`.
+
+### [x] Reference the new project-wide eye standard from `CLAUDE.md`
+**Why:** `BlenderTools/README_eye_standard.md` was created 2026-08-12 as a character-agnostic
+standard for how eyes are built across the whole roster - geometry, pivot, UV handedness,
+texture, bones, gaze, and a 7-point verification checklist. It is a peer of
+`README_rig_conventions.md`, which `CLAUDE.md` already points at.
+
+The Unity-side rules in it are the ones most likely to be missed, because they fail *silently*:
+
+- Unity's Humanoid auto-mapper does **not** leave `LeftEye`/`RightEye` empty when a character
+  has no eye bones - it binds them to the nearest plausible transforms. On Yemoja v2 it bound
+  both eyes and the jaw to **hair bones**, and reported `isHuman = true` regardless.
+- Verifying an avatar therefore means opening `Rig > Configure` and reading *what each slot
+  points at*, not merely that the slot is populated and the bone count is right.
+
+Without a pointer in `CLAUDE.md`, Claude Code has no way to know the standard exists, and the
+next character through the pipeline repeats the same faults.
+
+Deliberately not done from the Blender side: `CLAUDE.md` is the Unity session's context file,
+and edits to it should go through the normal review/commit path rather than being written
+directly by the modelling session.
+
+**Acceptance criteria:**
+- `CLAUDE.md` gains a short reference to `BlenderTools/README_eye_standard.md`, alongside the
+  existing `README_rig_conventions.md` reference, noting it applies to every character.
+- The avatar-mapping caveat above is stated in one line, or explicitly linked.
+- No content from the standard is copied into `CLAUDE.md` - reference only. The standard is
+  single-source; restating it is how standards drift.
+
+**Relevant files:** `CLAUDE.md`, `BlenderTools/README_eye_standard.md`,
+`BlenderTools/README_rig_conventions.md`.
+
+**Done (2026-09-03):** Also found while doing this: `CLAUDE.md` didn't actually reference `README_rig_conventions.md` either, despite this task's own "Why" saying it did - the earlier rig-naming task that was meant to add that pointer got superseded before it was ever executed, so the gap was real, not just this task's. Added both references together in a new "Character rig/eye standards" section rather than compounding the gap further. `README_eye_standard.md` itself was untracked (only `README_rig_conventions.md` was already in git), so tracked it too - a reference to a file nobody's clone has isn't a reference. Stated the Humanoid-auto-mapper-binds-to-hair-bones caveat in one line per the acceptance criteria, no other content copied from the standard. Branch `task/claude-md-eye-standard-reference`.
+
+---
+### [x] Review + commit the Yemoja_v3 import (done live by Cowork), and rename the now-misleading model file
+**Why:** The modeller shipped `BlenderTools\_export\Yemoja_v3.fbx` (2,220,940 bytes; manifest now schema 18). Headline change is a **skin weight fix**: in v2 `Yemoja_Body` was skinned almost entirely to the `.R` bone set on BOTH halves (`.L` total 13.25 vs `.R` 4098). The bind pose looked correct so nothing caught it, but it would have torn body away from clothes on the first asymmetric attack. Also included: a proportion sculpt (thighs thickened, forearms slimmed, eye sockets widened - 775 verts moved, topology unchanged), and eye work (iris 10.98 -> 12.90 mm, gaze convergence corrected to 3.78 deg, both painted catchlights moved onto the mirror axis).
+
+**Imported by copying v3 over the existing `Assets/CharacterModels/Yemoja/models/Yemoja_v2.fbx` path**, per the modeller's own recommendation, so the GUID is preserved and both prefabs plus the roster arrays stayed wired with zero scene edits (verified: GUID `13d3e5395146e914f89ba56696257511` unchanged; `FightScene` and `CharacterSelect` still reference both prefabs).
+
+**Verified independently rather than taken on trust:**
+- **The skin weight fix is real, measured from Unity's own imported bone weights** (not the Blender-side report): `.L` total 2472.34 vs `.R` 2468.39, a ratio of **1.0016** where v2 was roughly 300:1 skewed. 23 groups per side carrying weight, exactly as reported, and 0 vertices with no bone influence. Mirror-paired bones now carry identical weight (`Arm.L`/`Arm.R` both 367.35, `ToeBase` both 351.26, `Hand` both 225.34, `Leg` both 193.46) - that symmetry is the signature of a correctly mirrored skin. Note the absolute totals differ from the modeller's Blender figures (2472 vs 2056) purely because Unity splits vertices at UV/normal seams (8017 in Unity vs 6475 in Blender) and clamps to 4 influences; the **ratio** is the meaningful number, not the magnitude.
+- Scale re-measured rather than assumed to carry: still exactly **1.80000** source height, **3.4500** in-game at the 1.91667 root scale.
+- Avatar `isHuman = true`, 52 mapped slots, `Armature` present in `skeleton[]`, 0 bones referenced that don't exist in the model.
+- **The two v2 auto-mapper faults did NOT recur** - 0 humanoid slots bound to hair bones (v2 had `LeftEye`/`RightEye`/`Jaw` pointing at `hair_loc*`), and 15/15 left-hand plus 15/15 right-hand finger bones mapped. See the finding below for why.
+- **All 12 hitbox/trident markers still resolve to real bones, 0 stranded** on both the playable and display prefabs. See the second finding below.
+- Retargeting live-checked across all 8 clips: trident-to-hand distance holds at exactly 0.1574 at every sample of every clip (it rigidly follows the hand), toe clearance ranges -0.03 to -0.39, and at idle the left index finger rotates 63.8 deg / right 56.0 deg (proving both hands' finger mappings are live).
+- Console completely clean. The 6 self-intersecting `Hair` polygon warnings seen on the v2 import did **not** recur this time - worth mentioning to the modeller, though I'd treat that as an observation rather than proof they were fixed.
+
+**TWO FINDINGS THAT REFINE THE v2 RECORD'S WARNINGS - both good news, both worth internalising:**
+1. **Overwriting the FBX in place preserved the hand-corrected humanoid map.** Because the `.meta` was untouched, Unity did not re-run its auto-mapper, so the 52-slot map Cowork hand-fixed on v2 (removing the three bogus hair-bone bindings, adding the 15 missing left-finger bindings) carried straight over. Had the file been imported at a *new* path, the auto-mapper would have run fresh and almost certainly reintroduced both faults. **This is a strong, concrete argument for always overwriting in place on model updates.**
+2. **Marker parenting survived, which narrows the earlier warning.** The v2 record warns that an in-place re-export regenerates internal transform fileIDs and silently strands bone-attached objects on the root. That did not happen here. The distinction appears to be that v3's bone hierarchy and names are **identical** to v2's - the fileIDs are derived from hierarchy, so an export that changes only vertex positions is safe, whereas the earlier breakage followed a re-export that *did* change the hierarchy (the project-wide bone rename). So the rule is better stated as: **re-verify marker parenting whenever the rig's hierarchy or bone names change** - not on every re-export. It is still cheap to check either way.
+
+**MANUAL STEP THAT WAS EASY TO MISS, and was done:** `Yemoja_Body_mat` and `Yemoja_Eye_mat` both had their BaseColor repointed from `Yemoja_Color_SkinGrade_v2_eyeShade.png` to `Yemoja_Color_SkinGrade_v3_iris.png`. Nothing errors if this is skipped - you silently get the old, smaller iris. Confirmed both now read `Yemoja_Color_SkinGrade_v3_iris`, sRGB on. The other four materials are unchanged, and all 8 model slots + 9 prefab slots still bind to the authored `.mat` assets via the remap table with `materialLocation = InPrefab` (never `External`, which is deprecated and logs a repeating exception).
+
+**Acceptance criteria:**
+- Review the diff: the FBX binary, its `.meta`, and the two `.mat` files. Nothing else should have changed.
+- **Rename `Yemoja_v2.fbx` to `Yemoja.fbx`.** This was optional before; it is now actively misleading, because the file is named v2 but contains v3 and will contain v4 next time. A Unity rename preserves the GUID so both prefabs survive it - but do it as its own commit and re-verify `isHuman`, the 52-slot map and marker parenting afterwards, since a rename regenerates the avatar sub-asset name.
+- Playtest: select Yemoja, confirm the new proportions and iris read correctly, and specifically watch for body-vs-clothes tearing during the asymmetric attacks (`SwordAndShieldAttack`, `SwordAndShieldSlash`) - that is the exact failure the weight fix prevents, so it is the meaningful regression test.
+
+**New standard doc to wire in:** `BlenderTools/README_eye_standard.md` - project-wide, character-agnostic eye spec (geometry, pivot, UV handedness, texture, bones, gaze, 7-point verification), peer of `README_rig_conventions.md`. There is already a `TASKS.md` item to reference it from `CLAUDE.md`; the manifest at schema 18 points at both standards.
+
+**Still open, unchanged by this import:** animation events (`PerformAttack` / `StopAttacking` / `EndHit`) are still absent from all 8 clips, so **her attacks still deal no damage** - biggest remaining gap. Eye pitch ~1.1 deg down with the manifest contradicting itself (8 deg in one place, 0.29 in another), left alone deliberately. Eyebrows still read as plastic slabs (Blender-side). `CharacterPhysics.groundLayerMask` is still 0 on Yemoja, carried over verbatim and still looks wrong. Root `BoxCollider` and hitbox sizes still date from the pre-resculpt proportions - and v3 thickened the thighs and slimmed the forearms, so the leg and hand boxes are now a little further from the silhouette than they were.
+
+**Relevant files:** `Assets/CharacterModels/Yemoja/models/Yemoja_v2.fbx` (+meta), `Assets/CharacterModels/Yemoja/materials/Yemoja_Body_mat.mat`, `Yemoja_Eye_mat.mat`, `BlenderTools/README_eye_standard.md`, `claude/yemoja-v2-import-record.md` (project doc).
+
+**Done (2026-09-03):** Committed together with v4/v5/v6 and the 2026-09-02 material correction as one combined commit - see the shared note on the v6 entry below for why (only the final on-disk state ever existed to commit; there was no way to split it back into per-version commits). The rename to `Yemoja.fbx` still was not done, for the same reason given here originally plus the fact it's now four further imports stale; still Stephanie's/Cowork's call. Branch `task/yemoja-v3-v6-import-review`.
+
+---
+### [x] Review + commit the Yemoja_v4 import (done live by Cowork)
+**Why:** Modeller shipped `BlenderTools\_export\Yemoja_v4.fbx` (2,360,076 bytes; manifest schema 21). New since v3: real **eye bones** (`mixamorig:Eye.L` / `Eye.R` under Head, rig 92 -> 94, 191 verts each at weight 1.0), **rebuilt eyebrows** (the two solid brow shells inside `Yemoja_Body` deleted, replaced by `Yemoja_BrowCards_A_R` alpha hair cards), and a painted brow base plus rougher under-brow skin in the atlas.
+
+Imported by copying over `Assets/CharacterModels/Yemoja/models/Yemoja_v2.fbx` (filename still misleading). GUID preserved, so both prefabs and the roster arrays stayed wired with zero scene edits.
+
+**THE ONE THING THAT WENT WRONG, AND THE RULE IT PRODUCES.** Overwriting in place preserves the `.meta`, which on v3 was purely a benefit - it kept Cowork's hand-corrected humanoid map and stopped Unity re-running its auto-mapper. On v4 the same mechanism **bit us**, because the preserved `.meta` also pins `humanDescription.skeleton[]`, and that list was the stale 101-entry v3 skeleton with no `Eye.L`/`Eye.R` in it. Mapping the two new eye slots produced a `human[]` entry referencing a bone absent from `skeleton[]`, and the avatar silently flipped to **`isHuman = false`** - the exact signature of the original frozen-animation bug (`Rig Error: Avatar creation failed`, which only appears as a *Log*, not an error, so it is easy to miss).
+
+Fixed with the standard reset: `animationType = None` -> reimport -> `Human` + `CreateFromThisModel` -> reimport, which rebuilt `skeleton[]` from the current hierarchy (101 -> 104 entries, eye bones present).
+
+**Rule for next time, worth adding to the standing notes: overwrite in place as usual, but if the BONE COUNT changed, do the None -> Human reset immediately afterwards.** Vertex-only updates (v3) keep the preserved map safely; skeleton changes (v4) need the rebuild. Then re-audit the fresh auto-map, because the reset discards the hand corrections.
+
+**What the fresh auto-map got right and wrong this time:** eyes correctly bound to the real `Eye.L`/`Eye.R` (as predicted - once real eye bones exist the mapper can no longer reach for hair bones), and **both** hands' 15 finger bones mapped correctly, unlike v2 where the left hand was entirely missed. It still bound the **Jaw** slot to a hair bone (`hair_loc16_0`); Yemoja has no jaw bone, so that entry was removed. Final state: **54 mapped slots**, `isHuman = true`, 0 slots bound to hair bones, 0 bones referenced that don't exist, `Armature` present in `skeleton[]`.
+
+**Marker parenting survived, which refines the rule again.** The handoff flagged the 92 -> 94 bone change as likely to regenerate transform fileIDs and silently strand the hitboxes on the prefab root. It did not happen - all 12 markers on the playable prefab and the trident on the display prefab still resolve to real bones, 0 stranded. The reason appears to be that the new bones are *leaves added under Head*, which does not perturb the fileIDs of the bones the markers actually attach to (`Head`, `Hand.L/R`, `Spine`, `Leg.L/R`). So the sharper statement is: **a bone-count change does not automatically break marker parenting - what breaks it is renaming or restructuring the bones the markers hang off.** Still worth checking every time; it is cheap and it fails silently.
+
+**Texture repoints - four changes, two maps on each of two materials, all applied:**
+- `Yemoja_Body_mat` and `Yemoja_Eye_mat`: BaseColor -> `Yemoja_Color_SkinGrade_v4_brow.png`, MetallicSmoothness -> `Yemoja_MetallicSmoothness_v2_brow.png`.
+- **Caught an import-setting fault while doing it:** `Yemoja_MetallicSmoothness_v2_brow.png` was importing with **sRGB ON**. It is data, not colour - left that way it would have gamma-shifted both the metallic and the smoothness channels, giving subtly wrong skin specular with nothing in the console to indicate why. Corrected to sRGB OFF.
+
+**Brow cards verified:** 1,360 triangles (exactly as reported), **100.00% rigid to `mixamorig:Head`**, bound to the **existing** `Yemoja_Lashes_mat` with no new material created. Distinct materials on the model still **6**; submeshes **9**; no stray auto-generated Materials folder. Confirmed the brow cards track the head by comparing their posed bounds against the lash cards' across five clips - the two move together to within a few thousandths, and the lashes are the control since they were already correct.
+
+**Everything else re-verified:** source height exactly 1.80000 / 3.4500 in-game; skin weight balance from Unity's own imported weights still `.L` 2671.34 vs `.R` 2667.39, **ratio 1.0015**, 0 unweighted verts (now 24 weighted groups per side rather than 23, consistent with the new per-side eye bone); trident-to-hand distance holds at exactly 0.1574 across every sample of all 8 clips; toe clearance -0.03 to -0.39; both hands' fingers animating at idle; all 9 submesh slots bound to the authored materials with 0 nulls; `FightScene` and `CharacterSelect` still referencing both prefabs; console clean.
+
+**Acceptance criteria:**
+- Review the diff: FBX binary, its `.meta`, the two `.mat` files, and the `.meta` for `Yemoja_MetallicSmoothness_v2_brow.png` (the sRGB fix).
+- **Rename `Yemoja_v2.fbx` to `Yemoja.fbx`.** Now three versions stale. GUID-safe, but give it its own commit and re-check `isHuman`, the 54-slot map and marker parenting afterwards.
+- Playtest: brows and eyes read correctly at CharacterSelect distance; and the regression test that matters - **watch for body-vs-clothes tearing during `SwordAndShieldAttack` and `SwordAndShieldSlash`**, since a static pose looks fine even when the skin weights are wrong.
+
+**Still open, unchanged:** animation events (`PerformAttack` / `StopAttacking` / `EndHit`) absent from all 8 clips, so **her attacks still deal no damage** - biggest remaining gap by far. Root `BoxCollider` and hitbox sizes still date from pre-resculpt proportions. `CharacterPhysics.groundLayerMask` still 0 on Yemoja.
+
+**Relevant files:** `Assets/CharacterModels/Yemoja/models/Yemoja_v2.fbx` (+meta), `materials/Yemoja_Body_mat.mat`, `materials/Yemoja_Eye_mat.mat`, `textures/Yemoja_MetallicSmoothness_v2_brow.png.meta`, `claude/yemoja-v4-import-record.md`.
+
+**Done (2026-09-03):** Committed together with v3/v5/v6 and the 2026-09-02 material correction as one combined commit - see the shared note on the v6 entry below. Branch `task/yemoja-v3-v6-import-review`.
+
+---
+### [x] Review + commit the Yemoja_v5 lips import (done live by Cowork)
+**Why:** Modeller shipped `BlenderTools\_export\Yemoja_v5.fbx` (2,415,996 bytes; manifest schema 24). A **lips pass** and nothing else: the lip region was subdivided two levels and hand-sculpted, plus three new skin-atlas textures. Body 6,493 -> 7,385 verts / 12,896 -> 14,680 tris in Blender terms. No new materials, textures slots, draw calls or renderers - still 6 materials across 9 submeshes.
+
+Imported by overwriting `Assets/CharacterModels/Yemoja/models/Yemoja_v2.fbx` in place. GUID preserved, so both prefabs and the roster arrays stayed wired with zero scene edits.
+
+**BOTH PREDICTED IMPORT-SETTING FAULTS WERE REAL AND ARE FIXED.** The three new PNGs had no `.meta`, so Unity generated defaults, and two of the three defaults were wrong - each one a fault this project has already shipped once:
+- `Yemoja_Normal_v7_seam.png` imported as a plain **Default / sRGB** texture. Corrected to **Normal Map** type. (Same fault as `Yemoja_Hair_Normal.png` on the v2 import.)
+- `Yemoja_MetallicSmoothness_v8_lipbreakup.png` imported with **sRGB ON**. Corrected to **OFF**. (Same fault as `Yemoja_MetallicSmoothness_v2_brow.png` on v4.) Left wrong this gamma-shifts both the metallic and smoothness channels and gives subtly wrong skin specular with nothing in the console.
+- `Yemoja_Color_SkinGrade_v7_lipsFinal.png` defaulted correctly (Default / sRGB ON).
+
+These were fixed **before** anything was wired, so no downstream step ever read bad data. Worth noting the pattern: this is now three imports in a row where a new data map arrived without a `.meta` and Unity's default was wrong. **Any packed data map - metallic/smoothness, masks, roughness - needs sRGB off; any normal map needs Normal Map type.** Cheap to check, silent when missed.
+
+**Six texture repoints applied** (three maps x two materials - `Yemoja_Eye_mat` shares the skin atlas and is the one that fails silently if forgotten):
+- `Yemoja_Body_mat` and `Yemoja_Eye_mat`: BaseColor -> `Yemoja_Color_SkinGrade_v7_lipsFinal`, Normal -> `Yemoja_Normal_v7_seam`, MetallicSmoothness -> `Yemoja_MetallicSmoothness_v8_lipbreakup`.
+- Also ran a sweep across every material in the Yemoja folder for references to any superseded map (`Yemoja_Normal_v6_lips`, the older skin atlases, the older metallic/smoothness maps): **zero stale references** remain.
+
+**No rig reset was needed, and that was verified rather than assumed.** Bone hierarchy is unchanged at 94 bones, so per the rule as narrowed across v2/v3/v4 the preserved `.meta` was safe here: avatar came through at `isHuman = true`, 54 mapped slots, `skeleton[]` still 104 with `Armature` present, 0 bones referenced that don't exist, 0 slots bound to hair bones, 15/15 fingers on both hands. **All 12 markers still on real bones, 0 stranded**, on both prefabs; `attackColliders[0]` = `A_Trident`.
+
+**Everything else re-verified:** measured source height exactly 1.80000 / 3.4500 in-game (measured, not assumed, per standing policy); body 8,763 Unity verts / **14,680 tris exactly matching the reported figure**; skin weight balance `.L` 2671.34 vs `.R` 2667.39, **ratio 1.0015**, 0 unweighted verts, 24 weighted groups per side - the new lip verts ride on `mixamorig:Head` (she has no jaw bone) so they add to the centre total without skewing the L/R balance; trident-to-hand distance holds at exactly 0.1574 across every sample of all 8 clips; toe clearance -0.03 to -0.39; both hands' fingers animating; 9/9 submesh slots bound with 0 nulls; 6 distinct materials; no stray auto-generated Materials folder.
+
+**A CORRECTION TO THE v3 AND v4 RECORDS.** Those said the six "self-intersecting `Hair` polygon" messages seen on the v2 import "did not recur". That was wrong, and the mistake was mine: those messages are logged at **Log** level, not Warning, and my post-import console checks on v3 and v4 filtered to errors and warnings only, so they were never actually in scope. They reappeared on this import when the filter was widened. They have most likely been present on every import since v2. Nothing has changed about the hair mesh - only the accuracy of the reporting. The underlying item (1 non-manifold hair edge Blender-side) is already on the modeller's open list; the Unity-side count is 6 discarded polygons and is worth relaying, but it is not new and not a regression.
+
+**Acceptance criteria:**
+- Review the diff: the FBX binary and its `.meta`, the two `.mat` files, and three new texture `.meta` files (two of which carry the corrected import settings).
+- **Rename `Yemoja_v2.fbx` to `Yemoja.fbx`.** Four versions stale now. GUID-safe; give it its own commit and re-check `isHuman`, the 54-slot map and marker parenting afterwards.
+- Playtest: the regression test that still matters is **body-vs-clothes tearing during `SwordAndShieldAttack` and `SwordAndShieldSlash`** - a static pose looks fine even when skin weights are wrong. New for this build: check the mouth at **fight-camera distance** as well as in CharacterSelect. The lip work is a close-up asset and should simply read as a normal mouth at fight range, not draw attention.
+
+**Still open, unchanged by this pass:** animation events (`PerformAttack` / `StopAttacking` / `EndHit`) absent from all 8 clips, so **her attacks still deal no damage** - unchanged across v2, v3, v4 and now v5, and by a distance the biggest remaining gap. Root `BoxCollider` and hitbox sizes still date from pre-resculpt proportions. `CharacterPhysics.groundLayerMask` still 0 on Yemoja.
+
+**Relevant files:** `Assets/CharacterModels/Yemoja/models/Yemoja_v2.fbx` (+meta), `materials/Yemoja_Body_mat.mat`, `materials/Yemoja_Eye_mat.mat`, `textures/Yemoja_Normal_v7_seam.png.meta`, `textures/Yemoja_MetallicSmoothness_v8_lipbreakup.png.meta`, `textures/Yemoja_Color_SkinGrade_v7_lipsFinal.png.meta`, `claude/yemoja-v5-import-record.md`.
+
+**Done (2026-09-03):** Committed together with v3/v4/v6 and the 2026-09-02 material correction as one combined commit - see the shared note on the v6 entry below. Branch `task/yemoja-v3-v6-import-review`.
+
+---
+### [x] Review + commit the Yemoja_v6 import (done live by Cowork)
+**Why:** Modeller shipped `BlenderTools\_export\Yemoja_v6.fbx` (2,379,404 bytes) with a full guideline at `BlenderTools/YemojaDesignArtifacts/README_unity_import.md`. Rig 94 -> 80 bones (34 stale `hair_loc*` replaced by 20 `hair_grp*`), rest mesh re-grounded onto z=0, weights normalised to max 4 influences, clavicle bleed trimmed, hair split into an opaque body material and an alpha-tested tip material, lash cards and eyeliner each merged to one object, clothes decorations decimated, and a new `Yemoja_Tattoos` decal mesh. Materials 6 -> 10, submeshes 9 -> 13, renderers 9.
+
+Imported by overwriting `Assets/CharacterModels/Yemoja/models/Yemoja_v2.fbx` in place. GUID preserved; both prefabs and the roster arrays stayed wired with zero scene edits.
+
+---
+
+#### THE MISTAKE I MADE, AND THE NEW RULE IT PRODUCES
+
+I did the mandatory avatar reset **before** setting the final `globalScale`, following the README's step order literally. That is wrong, and it broke retargeting catastrophically in a way that is worth understanding because nothing errors.
+
+`humanDescription.skeleton[]` stores the avatar's rest pose as **absolute positions**. It is captured at reset time and is **not** recomputed when `globalScale` changes afterwards. Because I reset first and then measured and re-scaled, the rest pose ended up **10,000x larger** than the actual imported transforms - `mixamorig:Hips` recorded at Y 10754.44 against an actual local Y of 1.075444, `Armature` at 345.7842 against 0.034578.
+
+The symptom: **the bind pose looked perfect** (Hips Y 2.13, toes on the floor), `isHuman` was `true`, the humanoid map audited clean, and the console said nothing. The fault only appeared the instant a clip drove the rig - a single sample of the idle clip threw Hips to **Y 18,857** and the feet to Y -760. I nearly mis-attributed it to my own sampling loop accumulating root motion; sampling the same frame twice and getting an identical value is what ruled that out and proved it was a genuine retarget fault.
+
+Fixed by re-running the None -> Human reset **after** the scale was final. `skeleton[]` then matched the live transforms exactly, and the retarget came back sane.
+
+**Rule to add to the standing notes: set `globalScale` FIRST, then do the avatar reset.** Never the reverse. If any scale change happens after a reset, reset again. The failure is silent, passes every static check including `isHuman`, and only shows under animation.
+
+---
+
+#### FLOOR CLEARANCE MOVED THE WRONG WAY - needs a Blender-side decision
+
+The README predicted toe clearance would **improve by ~0.03** source units now that the rest mesh sits on z=0, and said explicitly that if it did not, it was worth chasing rather than repeating the old note. It did not improve. It got **worse by a consistent 0.0332** across all 8 clips (range -0.023 to -0.038):
+
+| clip | v6 toe Y | v5 | delta |
+|---|---|---|---|
+| Idle | -0.1479 | -0.1116 | -0.0363 |
+| Walk | -0.0690 | -0.0307 | -0.0383 |
+| Attack | -0.2742 | -0.2380 | -0.0362 |
+| Slash | -0.2716 | -0.2434 | -0.0282 |
+| Jump | -0.2090 | -0.1727 | -0.0363 |
+| BlockIdle | -0.2161 | -0.1838 | -0.0323 |
+| HitReaction | -0.4175 | -0.3943 | -0.0232 |
+| StumbleBackwards | -0.0882 | -0.0537 | -0.0345 |
+
+**Cause, measured not guessed:** the `Armature` object's own Y offset is **0.034578** source units (the 0.14324 Blender-Z translation the README says is intentional). The mean measured shift is **0.0332** - the same number to within 1.4 mm. In the **bind** pose the offset is honoured and the toes sit at +0.0216, correctly above the floor. Under Humanoid retargeting it is **not** honoured: Unity rebuilds the root from the avatar's hips/feet relationship and the Armature's translation is discarded, so the animated pose lands ~0.0346 lower than the rest pose implies. All 8 clips already have `heightFromFeet = true` and `heightOffset = 0`, so nothing on the clip side is compensating.
+
+Two ways to resolve, and I have deliberately applied **neither**, because both change gameplay-visible foot placement:
+- **Blender side (cleaner):** zero the `Armature` translation and bake the 0.14324 into the mesh instead, so the rest pose and the retargeted pose agree. Structural fix, no per-clip bookkeeping.
+- **Unity side (quick):** set `heightOffset = +0.0346` on all 8 clips. One line, but it is a per-clip value that has to be re-applied to every future clip, including the planned custom animations.
+
+Recommend the Blender-side fix. Flagging for Stephanie / the modeller rather than deciding unilaterally.
+
+---
+
+#### SHOULDER MUSCLE RANGES - the numbers the Blender side asked for
+
+The animation plan depends on ~30 deg of clavicle elevation surviving retargeting. Unity's per-muscle clamps, read from `HumanTrait` on this avatar (all slots are on `useDefaultValues = true`):
+
+| muscle | min | max |
+|---|---|---|
+| Left / Right Shoulder Down-Up | **-15.0 deg** | **+30.0 deg** |
+| Left / Right Shoulder Front-Back | -15.0 deg | +15.0 deg |
+| Left / Right Arm Down-Up | -60.0 deg | +100.0 deg |
+| Left / Right Arm Front-Back | -100.0 deg | +100.0 deg |
+
+**Answer: 30 deg of clavicle elevation survives - but it sits exactly ON the ceiling, with zero headroom.** Anything above 30 deg is silently clipped, and because it clamps rather than errors, an animator would see the pose flatten with no diagnostic. If the plan wants 30 deg as a working value rather than an absolute maximum, either keep authored elevation at ~25 deg to leave margin, or widen the limit per-avatar (set `useDefaultValues = false` and raise the max on the two Shoulder slots) - that is a Unity-side change I can make on request.
+
+---
+
+#### SEVEN TEXTURE IMPORT FAULTS FIXED, PLUS THE MOBILE MEMORY ITEM
+Type / colour-space corrections (the README's own table plus three the README omitted but the manifest specifies):
+- **Normal Map type** (were importing as plain sRGB textures): `Yemoja_Normal_v11_navelMirrored`, `Clothes_Normal_v2_seam`, `Yemoja_Fuzz_CoilNormal_v3_wisp`.
+- **sRGB OFF** (packed data): `Yemoja_MetallicSmoothness_v10_pores`, plus `Yemoja_Hair_Mask_v3_deblotch`, `Yemoja_Hair_BaseColor_v6_rootDark` and `Yemoja_Hair_TipCurl_Alpha` - the last three are named only in the manifest (`hair_shading_2026_08_28`, notes 29 and 32), not in the README, and would have been missed by following the README alone.
+- `Yemoja_Hair_BaseColor_v6_rootDark` also set to **Wrap Mode Clamp** per manifest note 29 - the gradient occupies V 0..0.058 while loc V runs to 1.04, so under Repeat every loc tip wraps onto the dark root band.
+
+Mobile texture memory - the README's largest single number, and it is fixed purely by import settings: **Android and iPhone overrides set to Max Size 1024, ASTC 6x6, mipmaps ON** on all six 2048 maps (skin base/normal/metallic-smoothness and the same three for clothes). Per the README's own figures that takes one character from 101 MB uncompressed to roughly 3 MB, i.e. two fighters from ~200 MB to ~6 MB before stage, UI or VFX. Source assets untouched at 2048, so CharacterSelect close-ups keep full detail on desktop.
+
+#### MATERIALS - four created, render state applied
+Created `Yemoja_Hair_Opaque_mat`, `Yemoja_Jewelry_mat`, `Yemoja_Tattoos_mat`, `Yemoja_Fuzz_mat`. Skin repointed on **both** `Yemoja_Body_mat` and `Yemoja_Eye_mat` to the v17/v11/v10_pores set; clothes normal to `Clothes_Normal_v2_seam`; eye emission wired to `Yemoja_Eye_Emission_v2_soft` at `RIG_eye_glow` 0.9375.
+
+Render Face applied exactly per the README table - Front on eight materials, Both on `Yemoja_Fuzz_mat` and `Yemoja_Lashes_mat`. **The hair split is correct and verified by triangle count**, which is the check that matters since getting it backwards silently forfeits the whole benefit: `Yemoja_Hair_Opaque_mat` carries **5,704 tris, alpha clipping OFF, queue 2000**; `Yemoja_Hair_mat` carries **920 tris, alpha-clipped at 0.5, queue 2450**. Both figures match the README exactly.
+
+All **13 submesh slots bound, 0 null, 10 distinct materials, 9 renderers** - matching the README's stated budget.
+
+#### Three things I had to choose because nothing specified them - **ALL THREE SUPERSEDED, see the 2026-09-02 correction below**
+1. **`Yemoja_Jewelry_mat` look.** No spec anywhere. Set metallic 1.0, smoothness 0.80, near-white. Used by `Yemoja_Nails` and the 2,388-tri loc-bead submesh of the scalp, so it is visible - worth an eye.
+2. **`Yemoja_Tattoos_mat` transparency mode.** Alpha-clipped at 0.5, matching every other cutout on this character and the README's alpha-tested budget framing. A tattoo decal on skin might read better Transparent (softer edges) at the cost of sorting - a look decision.
+3. **Hair base map.** The README's "do not fix" list still says hair is flat colour + normal only, but that text is carried over verbatim from v4/v5 and the manifest's hair work of 2026-08-19..28 supersedes it. I assigned `Yemoja_Hair_BaseColor_v6_rootDark` per manifest note 29. **Related and larger:** manifest notes 30 and 33 state that the Blender hair shader's `root_fade` and `is_card` chains are generic FLOAT attributes that FBX does not carry and stock URP Lit cannot read, and rule 213's mask-green-multiplies-albedo is a node-graph operation URP Lit has no slot for. The hair will therefore not match Blender until someone writes a Shader Graph or bakes those chains into vertex colours. That is a real piece of work and a decision, not something to slip into an import.
+
+#### Other verification
+Scale re-measured from scratch as instructed: at `globalScale` 1 the model is **7.45644** units, so `globalScale = 1.80 / 7.45644 = 0.24140200` - **different from v2's 0.23985990**, so reusing the old factor would have been wrong. Result exactly 1.80000 source / 3.4500 in-game. Rig: `isHuman` true, 54 slots, 15/15 fingers both hands, eyes on the real eye bones, 0 slots bound to hair bones (the auto-mapper grabbed `hair_grp07_0` for Jaw - **third time running** after `hair_loc16_0` on v2 and v4 - removed). All 12 markers plus the trident still on real bones, **0 stranded**, despite 14 bones being removed from under `Head`; `attackColliders[0]` = `A_Trident`. Weights: every one of the 9 meshes has **0 unweighted and 0 non-normalised vertices**, body L/R balance ratio 0.9989. Trident-to-hand distance constant at 0.1574 across every sample of all 8 clips. **Console completely clean at Log level** - and unlike the v3/v4 records, that claim is checked at Log level, so the ~6 self-intersecting Hair polygon entries really are gone (that mesh was rebuilt as `Yemoja_Scalp`).
+
+One deviation from the README worth noting, benign: it warned that `Yemoja_Scalp` would carry a zero-face `Yemoja_LocGuides_Invisible` slot needing any material. The actual import has a 4th scalp submesh of **234 real triangles** bound to `Yemoja_Body_mat`. No null slots either way, nothing to fix.
+
+**Acceptance criteria:**
+- Review the diff **as it stands**, not against a list written before the fact. The material and texture set was revised again on 2026-09-02 by the modeller working directly in Unity, and four textures named in this entry have since been retired to `Backups/`. See the follow-up entry below before judging any material or texture change here as unintended.
+- **Rename `Yemoja_v2.fbx` to `Yemoja.fbx`** - five versions stale. GUID-safe; own commit; re-check `isHuman`, the 54-slot map and marker parenting after.
+- Decide the floor-offset question above.
+- Playtest: body-vs-clothes tearing during `SwordAndShieldAttack` / `SwordAndShieldSlash`; tattoo, brow and eye read at both CharacterSelect and fight-camera distance; and confirm the hair reads acceptably given the shader gap noted above.
+
+**Still open, unchanged:** animation events (`PerformAttack` / `StopAttacking` / `EndHit`) absent from all 8 clips - **her attacks still deal no damage**, open since v2. Root `BoxCollider` and hitbox sizes still pre-resculpt. `CharacterPhysics.groundLayerMask` still 0. Hair motion needs a Unity-side spring/jiggle system - the 20 `hair_grp*` bones are not humanoid bones, so any animation keyed onto them is dropped by Humanoid import.
+
+**Relevant files:** `Assets/CharacterModels/Yemoja/models/Yemoja_v2.fbx` (+meta), `Assets/CharacterModels/Yemoja/materials/*` (10), `Assets/CharacterModels/Yemoja/textures/*.meta`, `claude/yemoja-v6-import-record.md`, `BlenderTools/YemojaDesignArtifacts/README_unity_import.md`.
+
+**Done (2026-09-03):** This session picked TASKS.md back up and found the working tree already held the *final* state - v3 through v6 plus the 2026-09-02 material correction had all landed live on top of the same `Yemoja_v2.fbx`/materials/textures with nothing committed in between, so there was no way to recover per-version diffs; committing "the v3 import" and "the v6 import" separately would mean fabricating history that never existed as discrete commits. Bundled all of it (this entry, v3, v4, v5, and the material-correction entry below) into one commit on `task/yemoja-v3-v6-import-review`.
+
+Reviewed rather than taken on faith: cross-checked every deleted texture against every `.mat`/`.prefab` in the repo (only hits were stale mentions in two uncommitted status docs, not live references); spot-checked the described mobile-texture-override .meta changes (ASTC, capped max size) against what's actually on disk; confirmed `Yemoja_Trident_mat` still resolves its MetallicGlossMap by GUID to the surviving combined map, justifying the deleted separate Metallic/Roughness textures.
+
+**Found something outside this task's scope while reviewing, fixed on its own branch first:** the shared `EarthMageAnimCTRL.controller` (used by EarthMage/Ninja/WarriorPrincess, not Yemoja - she has her own `YemojaAnimCTRL`) had its Walk state's Motion accidentally repointed to Yemoja's `SwordAndShieldWalk.fbx` clip - almost certainly a stray drag in the Animator window during a Yemoja session, since nothing in this session's history describes touching the shared controller. Left as-is, every character sharing that controller would have played Yemoja's walk animation instead of their own. Reverted on its own branch, `task/fix-earthmage-walk-anim-miswire`, before touching anything else, since it's a correctness bug with a much bigger blast radius than the Yemoja work it was hiding inside.
+
+**Not done, explicitly declined rather than silently skipped:** three "retired" hair textures (`Yemoja_Hair_BaseColor_v11_paler.png`, `Yemoja_Hair_CardAtlas_v3_tipTeal.png`, `Yemoja_Hair_Mask_v3_deblotch.png`) currently exist as identical duplicates both live under `Assets/CharacterModels/Yemoja/textures/` and archived under `Backups/2026-09-02_yemoja-v6-cleanup/`. Confirmed unreferenced by any Unity `.mat`/`.prefab`, but Stephanie flagged that Blender-side tooling may still reference them by path even though Unity doesn't - so the dedup/cleanup was left undone rather than guessed at. Left for Cowork. Same goes for the rest of the `Backups/`/`BlenderTools/` churn sitting in the working tree alongside this (old milestone `.blend` files deleted, new `WORKING_v108-v115` files and a `yemoja_manifest.json` reorganization added) - that's the modeller's/Cowork's working area, not touched from the Unity side.
+
+Playtest (idle/walk/jump/attack/heavy/block/hit/knockback, trident + hitbox tracking, body-vs-clothes tearing on the asymmetric attacks, console clean) still needs manual in-Editor verification.
+
+---
+### [x] Review + commit: Yemoja v6 material correction, mobile-settings repair, and the new CharacterImport scene (done live by Cowork, 2026-09-02)
+**Why:** three separate things landed together. Read the first one before reviewing any material diff.
+
+---
+
+#### 1. CORRECTION - I wired the wrong textures, and why I did not catch it
+
+On the v6 import I bound Yemoja's materials to the texture set listed in the modeller's `README_unity_import.md`. The modeller later audited the Unity project herself and found the look was wrong because newer textures already existed that the README's table did not mention.
+
+**The specific reasoning error:** on v6 I did cross-read the manifest against the README - but only for *import settings* (colour space, normal-map type). I never asked the different question of whether the texture **files** the README named were still the newest ones on disk. They were not. `Clothes_BaseColor_Ocean6_gradient.png` was created 2026-08-27 and `Yemoja_Jewelry_BaseColor_v3_nails.png` the same day; I wired `Clothes_BaseColor_Ocean2.png` from 2026-08-12. Both newer files were sitting in the project the whole time.
+
+The proof is in the `.meta` files: the mobile compression overrides I applied on v6 landed on Ocean2 and never on Ocean6_gradient, which is only possible if Ocean2 is what I bound.
+
+**Rule to add to the standing notes: before wiring a material, sort the texture folder by date and reconcile it against the handoff doc.** A handoff document records what was true when it was written. Files on disk record what is true now. When they disagree, the disk wins, and the discrepancy itself is worth reporting back to the modeller.
+
+Worth being precise about what was and was not wrong, because two claims in the v6 entry above are now false:
+- **False:** "the hair look was never baked" and needs a Shader Graph. The bake exists. `Yemoja_Hair_Baked_BaseColor_v2` / `_Normal_v2` / `_MetallicSmoothness_v2` were produced on 2026-09-02 and the hair now reads correctly in Unity with stock URP Lit. The Shader Graph question is closed for now.
+- **Misleading:** "four new `.mat` files" as a thing to review. Those four material assets still exist and are still the ones bound - the modeller edited them in place rather than replacing them. What changed is the textures inside them.
+- **Still true:** every measurement I reported on v6 was numerically accurate. They were accurate measurements of the wrong texture set.
+
+Yemoja now renders correctly: white/teal hair with the baked tip gradient, the gradient outfit, silver jewelry, tattoos reading at fight-camera distance. Verified by direct camera capture, not by inference.
+
+---
+
+#### 2. Mobile texture settings re-applied - a real regression, silently introduced
+
+Swapping a texture inside a material does **not** carry the old texture's import settings across. They live on the new texture's `.meta`, and a freshly added PNG defaults to no platform override at all. So the moment the new bakes were plugged in, part of the v6 mobile-memory work was undone with nothing logged anywhere.
+
+Re-applied Android + iPhone overrides (ASTC 6x6, mipmaps on, max size capped at 1024 but **never above the source resolution**, so a 128px jewelry map stays 128 rather than being upscaled) to 16 referenced textures. Colour space and normal-map type were checked at the same time and were already correct on the new files.
+
+**Rule: after any material or texture swap, re-audit platform overrides on the newly referenced textures.** This will recur on every future delivery.
+
+---
+
+#### 3. New `CharacterImport` scene - a place to audit models without loading the game
+
+`Assets/Scenes/CharacterImport.unity`, deliberately **not** in Build Settings, so it never ships and never affects the game.
+
+Lighting, ambient mode and the post-processing volume are copied from FightScene (directional white at intensity 2, rotation 50/330/0, soft shadows, `SampleSceneProfile`), and `CharacterStage` carries the same 1.813 scale the fighters use in game - so a look judged here is the look the game will render, which is the entire point.
+
+Driven by `Assets/DevTools/CharacterPreview/CharacterPreview.cs`. It builds a `PlayableGraph` by hand rather than using an AnimatorController, which means it can play any clip on any rig with no state machine wired, and because the graph runs on manual time it gives pause, frame scrub and slow motion. It offers: a clip picker labelled by **source file name** (every Mixamo clip is internally called `mixamo.com`, so the clip's own name is useless), per-renderer visibility toggles for isolating clothes-vs-body clipping, full/torso/face framing with orbit, a sky/dark/light background swap, live mesh statistics including empty material slots, and a live foot-clearance readout taken from the **toe bones** rather than renderer bounds - `SkinnedMeshRenderer.bounds` is a cached generous volume that does not tighten per frame, so it is useless for the floor-offset question we still have open.
+
+The whole file is wrapped in `#if UNITY_EDITOR`. An Editor-only assembly definition would have been tidier, but Unity refuses to attach a MonoBehaviour from an editor assembly to a scene GameObject; the preprocessor guard is the route that actually works.
+
+---
+
+#### 4. Retired to Backups
+`Backups/2026-09-02_yemoja-v6-cleanup/` now holds `Clothes_BaseColor_Ocean2.png`, `Yemoja_Hair_BaseColor_v11_paler.png`, `Yemoja_Hair_CardAtlas_v3_tipTeal.png`, `Yemoja_Hair_Mask_v3_deblotch.png` (all confirmed referenced by **no** material) plus two working screenshots. Moved, not deleted, per the project convention. Prune when the folder gets large.
+
+**Acceptance criteria:**
+- Confirm `CharacterImport.unity` is absent from Build Settings and stays absent.
+- Open the scene, press Play, step through all 8 clips. Console clean at Log level.
+- Confirm the four retired textures are referenced nowhere before the commit lands.
+- Spot-check that no material lost a texture in the move.
+
+**Relevant files:** `Assets/Scenes/CharacterImport.unity`, `Assets/DevTools/CharacterPreview/CharacterPreview.cs`, `Assets/DevTools/CharacterPreview/PreviewFloor_mat.mat`, `Assets/CharacterModels/Yemoja/textures/*.meta` (16), `Assets/CharacterModels/Yemoja/materials/*`, `Backups/2026-09-02_yemoja-v6-cleanup/`, `claude/yemoja-v6-import-record.md`, `claude/character-import-scene.md`.
+
+**Done (2026-09-03):** Split across two branches since the three things bundled in this entry are genuinely separable at the file level, unlike the v3-v6 model/texture/material state above:
+- Parts 1 and 2 (the corrected texture wiring, and the mobile platform-override re-apply on the 16 affected textures) are Yemoja material/texture files, so they landed inside the combined v2->v6 commit on `task/yemoja-v3-v6-import-review` along with everything else touching those same files - see that entry's Done note.
+- Part 3 (the `CharacterImport.unity` scene + `Assets/DevTools/CharacterPreview/`) is its own, unrelated set of files - committed separately on `task/yemoja-characterimport-preview-scene`. Confirmed `CharacterImport.unity` is genuinely absent from `ProjectSettings/EditorBuildSettings.asset` (only `CharacterSelect.unity` and `FightScene.unity` are listed there) before committing.
+- Part 4 (`Backups/2026-09-02_yemoja-v6-cleanup/` and the duplicate-texture cleanup) was **not** committed - see the flag on the v6 entry above. Left for Cowork.
+
+Did not open the scene or step through the 8 clips - that needs the Editor, not something drivable from here.
+
+
+---
+### [x] Review + commit: CharacterSelect scene rebuilt as the deity-showcase screen, plus the roster data layer (done live by Cowork, 2026-09-03)
+**Why:** Stephanie wanted the character-select screen rebuilt as a bright, deity-folklore showcase for landscape phones: one fighter on stage at a time, an elastic snap-to-centre portrait carousel, a lore panel, a stat radar that morphs between fighters, and a per-fighter ambient re-theme. She also needs the cast to be data, not scene wiring, so new fighters can be added as they are made. Cowork built it live in the Editor with her explicit go-ahead (this touches `CharacterSelect.unity`), verified it in Play mode by screenshot and by driving the full select -> confirm -> FightScene path, and left the scene saved.
+
+**Opponent flow is two-phase on one screen (Stephanie's call):** pick your fighter, CONFIRM locks it (toast, VS chip in the top bar), the header flips to CHOOSE YOUR OPPONENT and the same carousel picks the opponent; FIGHT writes `PlayerPrefs` `selectedCharacter` / `selectedOpponent` and loads build index 1. Back returns to the player phase. Keyboard arrows + Enter work in the Editor via `Keyboard.current` (new Input System only - `UnityEngine.Input` throws in this project).
+
+**What landed:**
+- `Assets/Scripts/Roster/` - `CharacterId` (append-only enum with explicit values; EarthMage=5, Ninja=6, WarriorPrincess=7 were appended after the seed deities), `CharacterDefinition` (ScriptableObject: identity text, playstyle, element, four palette colours, five 0-10 stats, icon, display prefab, playable prefab, `displayAnimator`, placeholder flag), `CharacterRoster` (ordered list, id lookup, OnValidate checks).
+- `Assets/Data/Roster/CharacterRoster.asset` + `Characters/{EarthMage,WarriorPrincess,Ninja,Yemoja}.asset`, in exactly the order `LoadCharacter.charPrefabs` uses in FightScene (verified by GUID: EarthMage, WarriorPrincess, Ninja, Yemoja), so saved `PlayerPrefs` indices still resolve to the same fighter. Yemoja carries real data; the other three are marked `isPlaceholder` with stand-in lore/colours until the real cast exists. Each definition's `displayAnimator` defaults to its playable prefab's controller (`EarthMageAnimCTRL` / `YemojaAnimCTRL`) so the display model plays its Idle state instead of standing in bind pose - the display prefabs ship with an Animator and no controller.
+- `Assets/Scripts/CharacterSelect/` - `CharacterSelectController` (phase machine, replaces `PlayerSelection.cs`, which the builder deleted), `DeityStage` (instantiates display models, anchors their feet at viewport (0.65, 0.16) on the z=0 plane, spring pop-in + idle bob), `AmbientBackdrop` (palette-driven gradient/blobs/halo/pillar/pedestal/particles), `LorePanel` (staggered rewrite), `RadarChartGraphic` (a `MaskableGraphic`; mesh rebuilt only while the spring is moving), `PortraitCarousel` + `PortraitIcon` (drag with rubber-band, velocity-projected snap, tap-to-select), `ConfirmButton` (pulse, squash, event), `UiSpring` (allocation-free damped spring).
+- `Assets/Editor/CharacterSelect/` - menu **Elementals Fight > Character Select**: `1 - Generate Sprites` (13 procedural white sprites into `Assets/UI/CharacterSelect/Sprites`, mobile import settings: no mips, max 512, compressed), `2 - Create Roster Assets` (idempotent, keeps GUIDs), `3 - Build Scene` (idempotent: deletes the generated roots and the legacy `Canvas`/`Characters` objects, rebuilds the whole hierarchy, wires every serialized field, saves the scene), `Run All (1-3)`. Every colour/size the layout depends on is a constant at the top of `CharacterSelectSceneBuilder.cs`. Re-running the builder is the supported way to change the layout; hand edits to the generated hierarchy will be lost on the next run.
+- Scene changes: `Main Camera` is now perspective (FOV 30 at (0, 1.6, -9), solid #030712 clear) instead of the old orthographic two-model framing; `Backdrop` is a Screen Space - Camera canvas at plane distance 30 so it draws behind the 3D model, `UI` is Screen Space - Overlay on top; both scalers are 1920x1080 match 0.5. `EventSystem` and `Directional Light` untouched. `Particles` is a 40-particle world-space system with `Assets/UI/CharacterSelect/Materials/Spark.mat` (URP Particles/Unlit, alpha blended).
+- Mobile-minded choices: all animation is transform/colour/alpha only; the three drifting blobs sit under their own nested Canvas so their movement never rebuilds the rest of the backdrop; the radar only re-meshes while morphing; no per-frame allocations in the hot paths; decorative Images have `raycastTarget` off.
+
+**Bugs found and fixed during the live pass, for the record:** `ApplyPalette` raced `AmbientBackdrop.Start` (script order) - now lazily initialised; `AddComponent<RadarChartGraphic>` did not add the `CanvasRenderer` that `Graphic` requires (RequireComponent on a base class is not honoured) - builder adds it explicitly; `LayoutRebuilder.ForceRebuildLayoutImmediate` on a rect without its own layout controller is a no-op, which let the lore rows accumulate their animation offset on every rewrite - it now rebuilds on the rows' layout parent; the third backdrop blob used `Secondary`, which is near-white for Yemoja/Ninja and read as a grey smudge - now pulled toward `Primary`.
+
+**Known gaps / not done:**
+- Real portraits: `CharacterDefinition.icon` is empty for everyone, so the carousel draws a coloured disc with the initial. Assign a Sprite per fighter and the icon appears automatically.
+- `LoadCharacter` still spawns from its own `charPrefabs[]` array; the roster asset only owns the select screen so far (see the next task).
+- Shop button is inert (tap bounce only) - there is no shop.
+- `Prototypes/CharacterSelect/` (a React web mock-up from earlier the same day) is superseded by this scene. It is small and self-contained; delete it if it is noise.
+- Playtest on a real phone still needs a human: the Editor Game view was 989x400 during verification.
+
+**Acceptance criteria:**
+- Open `CharacterSelect.unity`, Play: console clean; swipe the carousel, tap icons, confirm twice, land in FightScene with the two chosen fighters (verified once already: Yemoja vs Earth Mage).
+- Review the diff as three groups: `Assets/Scripts/Roster` + `Assets/Data/Roster` (data), `Assets/Scripts/CharacterSelect` + `Assets/Editor/CharacterSelect` + `Assets/UI/CharacterSelect` (screen), and `Assets/Scenes/CharacterSelect.unity` + deleted `Assets/Scripts/PlayerSelection.cs` (scene). Unity will have generated `.meta` files for all of it; commit them.
+- Commit on a feature branch (e.g. `task/character-select-deity-showcase`), not pushed.
+
+**Relevant files:** `Assets/Scenes/CharacterSelect.unity`, `Assets/Scripts/Roster/*.cs`, `Assets/Data/Roster/**`, `Assets/Scripts/CharacterSelect/*.cs`, `Assets/Editor/CharacterSelect/*.cs`, `Assets/UI/CharacterSelect/**`, `Assets/Scripts/PlayerSelection.cs` (deleted).
+
+**Done (2026-09-03):** Reviewed and committed as described, on `task/character-select-deity-showcase`. Verified before committing: `LoadCharacter.cs` is genuinely untouched (empty diff), so FightScene spawn order still comes from its own `charPrefabs[]` - the roster-migration task below is still what wires that up. Confirmed `CharacterSelectSceneBuilder.cs`'s reference to `Assets/Scripts/PlayerSelection.cs` is the tool's own guarded `DeleteLegacyScriptIfConfigured()` cleanup routine, not a dangling dependency - it's what actually deleted the old file when the builder ran. Confirmed no other script has a live (non-comment) reference to the deleted `PlayerSelection` type. Updated `CLAUDE.md`'s Code architecture section, which still described the now-deleted `PlayerSelection.cs`, to point at `Assets/Scripts/CharacterSelect/` instead.
+
+**Caught after the first commit:** six new folders (`Assets/Data`, `Assets/DevTools`, `Assets/Editor/CharacterSelect`, `Assets/Scripts/CharacterSelect`, `Assets/Scripts/Roster`, `Assets/UI`) were each missing their own folder-level `.meta` file - easy to miss because `git add <dir>` only stages paths *inside* a new directory, not the sibling `.meta` that carries the folder's own GUID. Without them Unity would have regenerated fresh GUIDs for all six folders on next open, a spurious diff on the very next session. Caught in a `git status` sweep afterward and added in a follow-up commit on each affected branch before anything shipped. Worth remembering for any future new-folder commit in this repo.
+
+Not independently re-verified: the live playtest (swipe/tap the carousel, confirm both fighters, land in FightScene, console clean) - it's recorded as verified once during the build session per the task's own notes, but this session didn't re-drive the Editor to confirm it again.
+
+---
+### [ ] Migrate `LoadCharacter` onto `CharacterRoster` so the roster asset owns spawn order too
+**Why:** The select screen now reads fighters from `Assets/Data/Roster/CharacterRoster.asset`, but FightScene's `LoadCharacter` still indexes its own hand-ordered `charPrefabs[]` with the `PlayerPrefs` int. The two agree today only because the roster assets were created in the same order. Once one source owns both, adding a fighter is: create a `CharacterDefinition`, append it to the roster, done.
+
+**Plan:**
+1. `LoadCharacter`: add `[SerializeField] CharacterRoster roster;` and spawn `roster.Get(index).PlayablePrefab`. Keep `charPrefabs[]` for one release as a fallback with a `Debug.LogWarning` when `roster` is null, so an unwired scene fails loud rather than silently spawning the wrong fighter.
+2. In-editor (needs a scene edit, so Cowork or Stephanie): assign the roster asset on FightScene's `GameManager` object, then delete the array.
+3. Playtest a mirror match and a cross match; reorder the roster and confirm the spawned pair follows it with no code change.
+
+**Relevant files:** `Assets/Scripts/GameManager/LoadCharacter.cs`, `Assets/Scenes/FightScene.unity`, `Assets/Data/Roster/CharacterRoster.asset`.
+
+---
 *Bring the next feature or bug to Claude AI (Cowork) and it'll be broken down into tasks here.*
