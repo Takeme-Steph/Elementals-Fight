@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24cbeab7e0298f846ab7553799ecd21e, type: 3}
+  m_Name: ArenaRoster
+  m_EditorClassIdentifier: Assembly-CSharp::ArenaRoster
+  arenas:
+  - {fileID: 11400000, guid: f637219d5e18b824ab2bf794deb872ab, type: 2}
+  - {fileID: 11400000, guid: a1f009fac54aecd41a8ae631ade8e257, type: 2}
+  - {fileID: 11400000, guid: 790f66fdb03374746a8c8dbc1daee373, type: 2}

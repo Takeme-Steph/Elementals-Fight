@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/CharacterSelect.unity
     guid: d82f56284ecd09742a64f62ecd96f317
   - enabled: 1
+    path: Assets/Scenes/ArenaSelect.unity
+    guid: 1b2c5512fcded0449a4640a547d526f0
+  - enabled: 1
     path: Assets/Scenes/FightScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
