@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class LoadCharacter : MonoBehaviour
 {
+    [SerializeField] private CharacterRoster roster; // Single source of spawn order once wired in-scene; charPrefabs[] is a fallback until then
     public GameObject[] charPrefabs; // Reference playable characters
     private int _selectedCharacter = 0; // have a default selected character index
     private int _selectedOpponent = 1;
@@ -38,6 +39,22 @@ public class LoadCharacter : MonoBehaviour
 
     }
 
+    // Resolves a roster index to a playable prefab. Prefers the CharacterRoster asset so
+    // adding a fighter is a data change; falls back to charPrefabs[] (with a loud warning)
+    // until a scene edit assigns the roster on this GameManager - see the migration task
+    // in TASKS.md. Remove the fallback once every scene has the roster wired.
+    private GameObject ResolvePrefab(int index)
+    {
+        if (roster != null)
+        {
+            CharacterDefinition definition = roster.Get(index);
+            return definition != null ? definition.PlayablePrefab : null;
+        }
+
+        Debug.LogWarning("LoadCharacter: no CharacterRoster assigned - falling back to charPrefabs[]. Assign Assets/Data/Roster/CharacterRoster.asset on this GameManager.");
+        return charPrefabs[index];
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -48,8 +65,8 @@ public class LoadCharacter : MonoBehaviour
     {
         Vector3 _playerSpawnLocation = new Vector3(_spawnX, _spawnY,_spawnZ); // Set spawn location of the player
         // Get the selected player character data
-        _selectedCharacter = PlayerPrefs.GetInt("selectedCharacter"); 
-        GameObject prefab = charPrefabs[_selectedCharacter];
+        _selectedCharacter = PlayerPrefs.GetInt("selectedCharacter");
+        GameObject prefab = ResolvePrefab(_selectedCharacter);
         // instantiate an instance of the selected player character
         GameObject player = Instantiate(prefab, _playerSpawnLocation, prefab.transform.rotation);
         player.SetActive(true); 
@@ -88,7 +105,7 @@ public class LoadCharacter : MonoBehaviour
     {
         // Get the selected opponent character data
         _selectedOpponent = PlayerPrefs.GetInt("selectedOpponent"); // get the selected char index
-        GameObject prefab = charPrefabs[_selectedOpponent]; // Get selected character
+        GameObject prefab = ResolvePrefab(_selectedOpponent); // Get selected character
         Vector3 _playerSpawnLocation = new Vector3(_spawnX + 5, _spawnY,_spawnZ); // Set spawn location of the player
         
         // instantiate an instance of the selected opponent character
