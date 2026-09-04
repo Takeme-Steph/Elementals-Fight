@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9eff485c2c7aeb40a6c9adbc2be0265, type: 3}
+  m_Name: OlympusHeights
+  m_EditorClassIdentifier: Assembly-CSharp::ArenaDefinition
+  id: 3
+  displayName: Olympus Heights
+  pantheon: Greek Realm
+  subtitle: The sky throne of infinite storms
+  runeSprite: {fileID: 21300000, guid: 3650265048c5af44982fc2e0e0322eef, type: 3}
+  runeGlyph: O
+  skyTop: {r: 0.05490196, g: 0.43137255, b: 0.54901963, a: 1}
+  skyBottom: {r: 0.91764706, g: 0.9647059, b: 1, a: 1}
+  horizon: {r: 1, g: 1, b: 1, a: 1}
+  accent: {r: 0.09803922, g: 0.827451, b: 0.9607843, a: 1}
+  glow: {r: 0.62352943, g: 0.9490196, b: 1, a: 1}
+  deep: {r: 0.023529412, g: 0.17254902, b: 0.22745098, a: 1}
+  particleStyle: 2
+  hazards: 0300000002000000
+  panoramaSprite: {fileID: 0}
+  environmentPrefab: {fileID: 0}
+  isPlaceholder: 1
