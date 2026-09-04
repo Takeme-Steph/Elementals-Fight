@@ -866,28 +866,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f27307ab3be5aa04a9b5b91bcd019dbf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArenaPanorama
-  layerA:
-    root: {fileID: 1341913443}
-    group: {fileID: 1341913444}
-    sky: {fileID: 668916983}
-    skyBottomFill: {fileID: 1299582932}
-    horizonGlow: {fileID: 2002579169}
-    bandFar: {fileID: 1653342320}
-    bandNear: {fileID: 137125323}
-    bandTop: {fileID: 1281594929}
-    bandBottom: {fileID: 1295720393}
-    vignette: {fileID: 863712822}
-  layerB:
-    root: {fileID: 1921438116}
-    group: {fileID: 1921438117}
-    sky: {fileID: 1769138591}
-    skyBottomFill: {fileID: 168917256}
-    horizonGlow: {fileID: 1662272788}
-    bandFar: {fileID: 714755747}
-    bandNear: {fileID: 233688506}
-    bandTop: {fileID: 1086932131}
-    bandBottom: {fileID: 499814843}
-    vignette: {fileID: 952365672}
+  layerA: {root: {fileID: 1341913443}, group: {fileID: 1341913444}, sky: {fileID: 668916983},
+    skyBottomFill: {fileID: 1299582932}, horizonGlow: {fileID: 2002579169}, bandFar: {fileID: 1653342320},
+    bandNear: {fileID: 137125323}, bandTop: {fileID: 1281594929}, bandBottom: {fileID: 1295720393},
+    vignette: {fileID: 863712822}}
+  layerB: {root: {fileID: 1921438116}, group: {fileID: 1921438117}, sky: {fileID: 1769138591},
+    skyBottomFill: {fileID: 168917256}, horizonGlow: {fileID: 1662272788}, bandFar: {fileID: 714755747},
+    bandNear: {fileID: 233688506}, bandTop: {fileID: 1086932131}, bandBottom: {fileID: 499814843},
+    vignette: {fileID: 952365672}}
+  validRefs: 1
+  activeIsA: 1
+  isTransitioning: 0
 --- !u!114 &245996096
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1219,7 +1208,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1515,6 +1504,7 @@ MonoBehaviour:
   flash: {fileID: 574982945}
   ringScaleTarget: {fileID: 165856009}
   ring: {fileID: 165856007}
+  validRefs: 1
 --- !u!224 &574982944
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1759,6 +1749,11 @@ MonoBehaviour:
   - {fileID: 1653398705}
   - {fileID: 1396085857}
   - {fileID: 2005805948}
+  lineRects: []
+  lineRestPos: []
+  validRefs: 1
+  staggerElapsedScratch: []
+  staggerDoneScratch: []
 --- !u!224 &668946491
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2442,7 +2437,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 3657433087
   m_fontColor: {r: 1, g: 1, b: 1, a: 0.85}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -2455,7 +2450,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -3206,7 +3201,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4279372555
   m_fontColor: {r: 0.043137256, g: 0.043137256, b: 0.07058824, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -3219,7 +3214,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -3401,21 +3396,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HazardBadgeStrip
   badges:
-  - root: {fileID: 2071439932}
-    chip: {fileID: 264336516}
-    icon: {fileID: 943905700}
-    glow: {fileID: 1760299178}
-    label: {fileID: 1108739339}
-  - root: {fileID: 1242891772}
-    chip: {fileID: 1989294851}
-    icon: {fileID: 766173334}
-    glow: {fileID: 145431223}
-    label: {fileID: 104218829}
-  - root: {fileID: 1610407065}
-    chip: {fileID: 1537068570}
-    icon: {fileID: 2098007607}
-    glow: {fileID: 1396465130}
-    label: {fileID: 813287383}
+  - {root: {fileID: 2071439932}, chip: {fileID: 264336516}, icon: {fileID: 943905700}, glow: {fileID: 1760299178}, label: {fileID: 1108739339}}
+  - {root: {fileID: 1242891772}, chip: {fileID: 1989294851}, icon: {fileID: 766173334}, glow: {fileID: 145431223}, label: {fileID: 104218829}}
+  - {root: {fileID: 1610407065}, chip: {fileID: 1537068570}, icon: {fileID: 2098007607}, glow: {fileID: 1396465130}, label: {fileID: 813287383}}
   hazardIcons:
   - {fileID: 0}
   - {fileID: 21300000, guid: d797efcc6b7b56a488a2838cad9cc2fc, type: 3}
@@ -3425,6 +3408,8 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 89a0ef9d3f36d734c9e807072d828cbe, type: 3}
   - {fileID: 21300000, guid: 48f74f52ef113aa4ca9649e8dadf5d71, type: 3}
   - {fileID: 21300000, guid: f2ff7a9b15a04d04abecb3aff02e2c9d, type: 3}
+  validRefs: 1
+  pulseStartTime: []
 --- !u!224 &1311718965
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3758,6 +3743,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArenaTabDock
   content: {fileID: 1435490057}
   template: {fileID: 1668984956}
+  validRefs: 1
+  tabs: []
 --- !u!224 &1430127451
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3972,6 +3959,8 @@ MonoBehaviour:
   backButton: {fileID: 302628864}
   confirmButton: {fileID: 1154718764}
   warp: {fileID: 574982943}
+  <CurrentIndex>k__BackingField: -1
+  validRefs: 1
 --- !u!114 &1544063178
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4031,7 +4020,7 @@ Canvas:
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
   m_UseReflectionProbes: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 10
@@ -4094,6 +4083,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArenaParticles
   particles: {fileID: 1598147670}
   lightningFlash: {fileID: 1018050809}
+  validRefs: 1
+  lightningColor:
+    r: 1
+    g: 1
+    b: 1
+    a: 1
 --- !u!198 &1598147670
 ParticleSystem:
   m_ObjectHideFlags: 0
@@ -9191,6 +9186,30 @@ MonoBehaviour:
   runeGlyphText: {fileID: 570591285}
   nameText: {fileID: 2099983914}
   button: {fileID: 1668984957}
+  validRefs: 1
+  isActive: 0
+  activation: 0
+  activationVelocity: 0
+  plateIdleColor:
+    r: 1
+    g: 1
+    b: 1
+    a: 1
+  borderIdleColor:
+    r: 1
+    g: 1
+    b: 1
+    a: 1
+  runeIdleColor:
+    r: 1
+    g: 1
+    b: 1
+    a: 1
+  accentColor:
+    r: 1
+    g: 1
+    b: 1
+    a: 1
 --- !u!114 &1668984957
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9382,7 +9401,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4285454325
   m_fontColor: {r: 0.9607843, g: 0.84313726, b: 0.43137255, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -9395,7 +9414,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -9524,7 +9543,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
