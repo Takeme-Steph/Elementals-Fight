@@ -8,8 +8,14 @@ using UnityEngine;
 // know anything about physics.
 public class CharacterPhysics : MonoBehaviour
 {
+    // The ray starts 0.15m above the fighter root, which rests at the ground
+    // surface. A shorter ray leaves only millimetres of tolerance for PhysX's
+    // contact resolution and can report airborne every frame after scale
+    // tuning. Keep the pre-metric 0.3m reach as the safe lower bound.
+    private const float MinimumGroundRayDistance = 0.3f;
+
     [SerializeField] private float rayOriginOffset = 0.15f;
-    [SerializeField] private float rayDistance = 0.157f;
+    [SerializeField] private float rayDistance = MinimumGroundRayDistance;
     [SerializeField] private LayerMask groundLayerMask;
 
     [Header("Facing")]
@@ -33,6 +39,11 @@ public class CharacterPhysics : MonoBehaviour
         // needing to re-configure every character prefab by hand.
         if (groundLayerMask == 0 && SceneHandler.Instance != null)
             groundLayerMask = SceneHandler.Instance.groundLayerMask;
+
+        // Existing prefabs serialize the short-lived 0.1565m value. Clamp it
+        // here too, so they cannot regress until each prefab is next saved in
+        // the Editor; new components start at the same safe value above.
+        rayDistance = Mathf.Max(rayDistance, MinimumGroundRayDistance);
     }
 
     private void FixedUpdate()
