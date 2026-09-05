@@ -103,7 +103,7 @@ public class DeityStage : MonoBehaviour
                 instance.transform.SetParent(modelsRoot, false);
                 instance.transform.localPosition = Vector3.zero;
                 instance.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-                instance.transform.localScale = new Vector3(1f, 1.7f, 1f);
+                instance.transform.localScale = Vector3.one;
                 baseScales[i] = instance.transform.localScale;
 
                 if (instance.TryGetComponent(out Collider col))

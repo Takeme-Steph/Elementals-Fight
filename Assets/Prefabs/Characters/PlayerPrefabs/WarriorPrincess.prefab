@@ -1254,15 +1254,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 69e6a6ea8e179f445bd248ba46f2a2e9, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.8132
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 69e6a6ea8e179f445bd248ba46f2a2e9, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.8132
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 69e6a6ea8e179f445bd248ba46f2a2e9, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.8132
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 69e6a6ea8e179f445bd248ba46f2a2e9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1498,8 +1498,8 @@ MonoBehaviour:
   isCTRLPlayer: 0
   playerMaxHealth: 100
   playerHealth: 100
-  matchWinCount: 0
-  knockbackForce: 20
+  roundWins: 0
+  knockbackForce: 10.434782
   blockDamageMultiplier: 0.2
 --- !u!114 &-6092717924412027851
 MonoBehaviour:
@@ -1514,8 +1514,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inputReader: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
-  playerMoveSpeed: 7
-  playerJumpForce: 35
+  playerMoveSpeed: 3.652174
+  playerJumpForce: 17.705748
 --- !u!114 &-6927977144846988723
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1528,9 +1528,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4382c6d136a45c4998d9f0a80e872ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 6
-  jumpForce: 20
-  attackRange: 2.5
+  moveSpeed: 3.1304348
+  jumpForce: 10.11757
+  attackRange: 1.3043478
   decisionInterval: 1
   decisionIntervalVariance: 0.25
   blockChance: 0.25
@@ -1562,10 +1562,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterPhysics
   rayOriginOffset: 0.15
-  rayDistance: 0.3
+  rayDistance: 0.15652174
   groundLayerMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 131072
   invertFacing: 0
 --- !u!4 &7520245450214991878 stripped
 Transform:

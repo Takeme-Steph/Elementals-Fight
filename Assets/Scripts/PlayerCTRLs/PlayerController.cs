@@ -3,8 +3,8 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private InputReader inputReader; // Reference the 3rd party input reader
-    [SerializeField] private float playerMoveSpeed = 7f; // Player's movement speed.
-    [SerializeField] private float playerJumpForce = 200f;
+    [SerializeField] private float playerMoveSpeed = 3.652f; // Player's movement speed (m/s, 1 unit = 1 metre).
+    [SerializeField] private float playerJumpForce = 17.706f;
 
     private CharacterPhysics characterPhysics;
     private PlayerStateMachine stateMachine;

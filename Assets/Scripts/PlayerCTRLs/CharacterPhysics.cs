@@ -9,7 +9,7 @@ using UnityEngine;
 public class CharacterPhysics : MonoBehaviour
 {
     [SerializeField] private float rayOriginOffset = 0.15f;
-    [SerializeField] private float rayDistance = 0.3f;
+    [SerializeField] private float rayDistance = 0.157f;
     [SerializeField] private LayerMask groundLayerMask;
 
     [Header("Facing")]

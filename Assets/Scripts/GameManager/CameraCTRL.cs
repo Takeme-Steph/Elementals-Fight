@@ -7,7 +7,7 @@ public class CameraCTRL : MonoBehaviour
     private GameObject mainPlayer; // Reference the player.
     private float _xMin, _yMin; // Left bounds of the camera.
     private float _xMax, _yMax; // Right bounds of the camera.
-    public float _yOffset; // Offset the camera Y position.
+    [SerializeField] private float _yOffset = 1.043f; // Offset the camera Y position.
     private float _minDistance; // Minimum distance(z) of camera from players.
     private float _maxDistance;
     private Transform[] playerTransforms; // Reference the location of all characters in the scene
@@ -23,9 +23,8 @@ public class CameraCTRL : MonoBehaviour
 
 
         //Initialize variables
-        _yOffset = 2f;
-        _minDistance = 3.5f;
-        _maxDistance = 7f;
+        _minDistance = 1.826f;
+        _maxDistance = 3.652f;
        
         
     }

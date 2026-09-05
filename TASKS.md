@@ -781,7 +781,7 @@ Playtest (tap each tab, warp/backdrop/header/badge/particle changes, CONFIRM int
 **Relevant files:** `Assets/Scripts/GameManager/LoadArena.cs` (new), `Assets/Scripts/GameManager/SceneHandler.cs`, `Assets/Scenes/FightScene.unity`, `Assets/Scripts/CharacterSelect/CharacterSelectController.cs`, `Assets/Editor/CharacterSelect/CharacterSelectSceneBuilder.cs`, `Assets/Data/Arenas/ArenaRoster.asset`.
 
 ---
-### [!] Adopt 1 Unity unit = 1 metre as the project scale standard - SPLIT TASK, read the ownership split before starting
+### [x] Adopt 1 Unity unit = 1 metre as the project scale standard - SPLIT TASK, read the ownership split before starting
 **Why:** Stephanie, 2026-09-05: *"what is the standard scale to use for characters in a mobile fighting game? the old scale was due to placeholder models, but since we are doing our own art work now, we can set the standards ourselves."*
 
 There is no genre-specific answer. The standard is Unity's own - **1 unit = 1 metre** - and it is not a tidiness convention, it is baked into engine defaults: gravity -9.81 m/s2, `defaultContactOffset` 0.01 (1 cm), `bounceThreshold` 2 m/s, Rigidbody mass in kg, URP light range/attenuation, shadow and normal bias, NavMesh agent radius 0.5 / height 2.0, and every third-party asset and tutorial value you will ever paste in.
@@ -823,6 +823,53 @@ Three reasons Cowork has to be first, in order of how much they matter:
 2. **Halving gravity before the prefab speeds are halved leaves the game visibly broken.** Whoever goes second closes that window; the shorter it is open, the better, and Cowork's half is the larger one.
 3. **Git handles it fine.** Uncommitted working-tree changes carry across `git checkout -b`, so Claude Code branching *after* Cowork's Editor work still puts everything on the feature branch and off `main`. This is already the established pattern in this project - see the dual-control/floor-sink entry above, where Cowork made the live Editor changes and Claude Code reviewed the diff and committed on a branch.
 
+#### COWORK'S HALF (steps 5-11) IS DONE - 2026-09-05. Claude Code: transcribe these MEASURED values, do not recompute.
+
+**Heights, measured by explicit skinning (sum of weighted bone matrices), not by eye.** The method was validated against Yemoja, whose true height was independently known to be 3.4500 before the change:
+
+| character | import scale | prefab root | height now | target | error |
+|---|---|---|---|---|---|
+| Yemoja | 0.241402 (UNCHANGED) | 1.0 | 1.8000 m | 1.80 | 0.0 cm |
+| Ninja | 0.926577 | 1.0 | 1.7500 m | 1.75 | 0.0 cm |
+| WarriorPrincess | 0.943815 | 1.0 | 1.7000 m | 1.70 | 0.0 cm |
+| EarthMage | 0.655419 | **0.58260** | 1.8500 m | 1.85 | 0.0 cm |
+
+Display prefabs match their player counterparts exactly. **Yemoja needed no importer change at all** - her pipeline already produced exactly 1.80 - so her avatar, her Jaw fix and the Yemoja@Idle skeleton patch were never touched.
+
+**EarthMage is the one exception to root scale 1.0**, deliberately. Its size comes from a `GlobalMove` node inherited from the base prefab `magi_earthen_v1.0.prefab`, which absorbs the import scale rather than following it. It is a placeholder due to be replaced, so it is driven from the prefab root instead of being fought. Revisit when real art lands.
+
+**Scale factors used.** Distances scale by d = 1.80/3.45 = **0.5217**. Jump force does NOT scale linearly: jump is `rb.AddForce(up * F, ForceMode.Impulse)` with mass 2, so apex = (F/m)^2 / 2g, and preserving the existing feel needs F x sqrt(d * g_new/g_old) = sqrt(0.5217 x 0.4905) = **0.5059**.
+
+**Values now on the prefabs (all four characters):**
+
+| field | was | now |
+|---|---|---|
+| `PlayerController.playerMoveSpeed` | 7 | **3.652** |
+| `PlayerController.playerJumpForce` | 35 | **17.706** |
+| `PlayerAutoPilot.moveSpeed` | 6 | **3.130** |
+| `PlayerAutoPilot.jumpForce` | 20 | **10.118** (EarthMage 18 -> 9.106) |
+| `PlayerAutoPilot.attackRange` | 2.5 | **1.304** (EarthMage 2.0 -> 1.043) |
+| `PlayerManager.knockbackForce` | 8 (Yemoja) / 20 (others) | **4.174 / 10.435** |
+| `CharacterPhysics.rayDistance` | 0.3 | **0.157** |
+| `CharacterPhysics.groundLayerMask` | **0 on ALL FOUR** | **131072** (1<<17, layer `Ground`) |
+
+`groundLayerMask` was 0 on every character, not just Yemoja - a raycast against mask 0 can never hit, so ground detection has never worked. The only collidable ground in FightScene is the `Ground` object on layer 17 (MeshCollider, top at y=0). Fixed on all four.
+
+**ALREADY DONE BY COWORK - Claude Code, SKIP step 1 and just verify it:** `Physics.gravity` is now **(0, -9.81, 0)**. It had to be set before the jump values could be tuned against it, which is why it moved to this half.
+
+**NEW, and it belongs to Claude Code because it is a script constant, not serialized data:** `Assets/Scripts/GameManager/CameraCTRL.cs` hardcodes its framing in `Start()` and two of the three fields are private, so they cannot be set from the Editor:
+- line ~27 `_yOffset = 2f;` -> **`1.043f`**
+- line ~28 `_minDistance = 3.5f;` -> **`1.826f`**
+- line ~29 `_maxDistance = 7f;` -> **`3.652f`**
+
+Without this the fight camera sits twice as far back as it should and the characters look half size. (While there: `_yOffset` is `public` yet overwritten in `Start()`, so its Inspector value is a lie - worth making it `[SerializeField] private` with the value as its initialiser.)
+
+**Verified after the change:** Yemoja still has 12 hitbox markers with 0 stranded, her prefab root is exactly 1.0, and the Yemoja@Idle retarget is still exact - worst joint-bend error against Blender **0.10 deg**, toe clearance +0.0287 m (above the floor). Console clean.
+
+**TWO THINGS LEFT, both deliberately not guessed at:**
+1. **The jump now reads as 3.99 m for a 1.80 m character** - takeoff 8.85 m/s, apex 2.2x her own height. That is the CURRENT feel preserved exactly, converted faithfully; it only looks extreme because metres make it legible for the first time. It is a design call, not a bug. A typical fighting-game jump is nearer 1x character height, which would be `playerJumpForce` ~11.9 for an apex of 1.8 m. Stephanie's call.
+2. **FightScene background art needs a framing pass.** The ground plane is fine (flat, y=0, 118 units wide). The parallax background sprites sit at y~10 at scale 1.5 and were placed for the old 2-units-per-metre world, so they will frame wrong against the closer camera. Not touched, because the arena system is being rebuilt anyway (see the `selectedArena` task) and guessing at art placement would be thrown away.
+
 **Acceptance criteria:**
 - Every character prefab root scale is exactly 1.0, and every character's in-world height matches its agreed target in metres, measured from mesh vertices and not eyeballed.
 - `Physics.gravity` is -9.81, or a higher value that is **deliberately** chosen for jump feel and recorded here as such - high gravity is a legitimate fighting-game choice, but it must be a decision made against a metric baseline rather than a leftover scale artifact.
@@ -832,6 +879,14 @@ Three reasons Cowork has to be first, in order of how much they matter:
 - The 12 hitbox markers and the trident still sit correctly on Yemoja - a uniform root change should preserve their local offsets, so this is a confirmation, not a re-derivation.
 
 **Relevant files:** `ProjectSettings/DynamicsManager.asset`, `Assets/Scripts/PlayerCTRLs/PlayerController.cs`, `PlayerAutoPilot.cs`, `PlayerManager.cs`, `CharacterPhysics.cs`, `Assets/Scripts/CharacterSelect/DeityStage.cs`, all prefabs under `Assets/Prefabs/Characters/`, all character FBX `.meta` files, `Assets/Scenes/FightScene.unity`, `claude/character-scale-standard.md` (full reasoning and the measured table).
+
+**Done, Claude Code's half (2026-09-05):** Verified `Physics.gravity` was already `(0, -9.81, 0)` per Cowork's note (skipped re-setting it). Cross-checked Cowork's measured table against the actual prefab YAML rather than transcribing it on trust - spot-checked `playerMoveSpeed`/`playerJumpForce`/`moveSpeed`/`jumpForce`/`attackRange`/`knockbackForce`/`rayDistance`/`groundLayerMask` on all four player prefabs and they match the table to the precision shown (e.g. Yemoja's `playerMoveSpeed: 3.652174` against the table's rounded `3.652`). Updated the six script defaults in `PlayerController.cs`/`PlayerAutoPilot.cs`/`PlayerManager.cs`/`CharacterPhysics.cs` to the general-case (non-EarthMage) values from that table, so script defaults and prefab values finally agree. Updated `CameraCTRL.cs`'s three hardcoded framing constants, and additionally made `_yOffset` `[SerializeField] private` with the new value as its initialiser and removed the `Start()` line that used to silently overwrite it - the bug Cowork flagged in passing. Replaced `DeityStage.cs`'s non-uniform placeholder-capsule scale with `Vector3.one` as instructed; note this line only affects a future roster entry with no display model yet, since all four current characters already have real display prefabs and never hit that code path.
+
+**Found and fixed a second instance of the EarthMage/Yemoja cross-wire bug, same class as the earlier Walk-state one:** `EarthMageAnimCTRL.controller`'s **Idle** state (shared by EarthMage/Ninja/WarriorPrincess) had its Motion pointed at Yemoja's new `Yemoja@Idle.fbx` clip instead of the original shared idle animation - confirmed by diffing the LFS-smudged content against the pre-session version, same technique as before. Confirmed Yemoja's own `YemojaAnimCTRL.controller` correctly points its Idle state at `Yemoja@Idle.fbx` - the clip landed in the right place too, it just also got dropped into the wrong controller. Reverted the shared controller's Idle motion back to the original clip. This has now happened twice (Walk once, Idle once) during live Animator-window sessions - worth being deliberate about which controller window has focus when dragging a new Yemoja clip in, since both share a name (`Idle`, `Walk`) and the mistake produces no error, only silently wrong animation for three other characters.
+
+Not independently re-verified, taken on Cowork's own explicit verification note: the 12 hitbox markers / trident still resolving on Yemoja, and the Yemoja@Idle retarget accuracy (0.10 deg worst joint error, +0.0287 m toe clearance). Playtest (jump apex, walk speed, camera framing, all four characters) still needs a human in the Editor.
+
+**Left open, matching the task's own "two things left":** the jump-feel design call (apex currently reads as 3.99 m for a 1.80 m character, faithfully preserving old feel) and the FightScene background-art framing pass (parallax sprites still placed for the old 2-units-per-metre world) are both explicitly Stephanie's call / blocked on the arena rebuild, not something to guess at here.
 
 ---
 ### [ ] Mixamo placeholder clips sink Yemoja's feet through the floor - separate bug from the idle warping, still open

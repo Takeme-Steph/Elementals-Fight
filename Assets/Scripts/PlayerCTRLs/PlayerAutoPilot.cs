@@ -7,11 +7,11 @@ using UnityEngine;
 public class PlayerAutoPilot : MonoBehaviour
 {
     [Header("Movement")]
-    [SerializeField] private float moveSpeed = 6f;
-    [SerializeField] private float jumpForce = 20f;
+    [SerializeField] private float moveSpeed = 3.130f;
+    [SerializeField] private float jumpForce = 10.118f;
 
     [Header("Combat range")]
-    [SerializeField] private float attackRange = 2.5f;
+    [SerializeField] private float attackRange = 1.304f;
 
     [Header("Decision timing")]
     [SerializeField] private float decisionInterval = 0.6f;

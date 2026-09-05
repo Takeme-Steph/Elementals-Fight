@@ -1263,7 +1263,12 @@ PrefabInstance:
     - target: {fileID: 1625258788960677049, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
       propertyPath: playerJumpForce
-      value: 35
+      value: 17.705748
+      objectReference: {fileID: 0}
+    - target: {fileID: 1625258788960677049, guid: 6cacedccdb010054591e67f3bde909b5,
+        type: 3}
+      propertyPath: playerMoveSpeed
+      value: 3.652174
       objectReference: {fileID: 0}
     - target: {fileID: 3311423737265760273, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
@@ -1294,6 +1299,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_ApplyRootMotion
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7436740926910661264, guid: 6cacedccdb010054591e67f3bde909b5,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.58260375
+      objectReference: {fileID: 0}
+    - target: {fileID: 7436740926910661264, guid: 6cacedccdb010054591e67f3bde909b5,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.58260375
+      objectReference: {fileID: 0}
+    - target: {fileID: 7436740926910661264, guid: 6cacedccdb010054591e67f3bde909b5,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.58260375
       objectReference: {fileID: 0}
     - target: {fileID: 7436740926910661264, guid: 6cacedccdb010054591e67f3bde909b5,
         type: 3}
@@ -1456,8 +1476,8 @@ MonoBehaviour:
   isCTRLPlayer: 0
   playerMaxHealth: 100
   playerHealth: 100
-  matchWinCount: 0
-  knockbackForce: 20
+  roundWins: 0
+  knockbackForce: 10.434782
   blockDamageMultiplier: 0.2
 --- !u!114 &-4783242635702432794
 MonoBehaviour:
@@ -1471,9 +1491,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4382c6d136a45c4998d9f0a80e872ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 6
-  jumpForce: 18
-  attackRange: 2
+  moveSpeed: 3.1304348
+  jumpForce: 9.105813
+  attackRange: 1.0434783
   decisionInterval: 2
   decisionIntervalVariance: 0.25
   blockChance: 0.25
@@ -1526,10 +1546,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterPhysics
   rayOriginOffset: 0.15
-  rayDistance: 0.3
+  rayDistance: 0.15652174
   groundLayerMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 131072
   invertFacing: 0
 --- !u!4 &5102722360222662652 stripped
 Transform:

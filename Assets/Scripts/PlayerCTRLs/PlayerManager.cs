@@ -21,7 +21,7 @@ public class PlayerManager : MonoBehaviour
     private float hitKnockbackDirectionX;
 
     // Magnitude of the physical push applied on a knockback-causing hit.
-    [SerializeField] private float knockbackForce = 8f;
+    [SerializeField] private float knockbackForce = 4.174f;
 
     // Chip damage taken while blocking - partial mitigation, not full
     // invincibility, so block-breakers/combos can bypass it later without

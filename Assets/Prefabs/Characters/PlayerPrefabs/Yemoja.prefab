@@ -598,17 +598,17 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 13d3e5395146e914f89ba56696257511,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.91667
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 13d3e5395146e914f89ba56696257511,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.91667
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 13d3e5395146e914f89ba56696257511,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.91667
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 13d3e5395146e914f89ba56696257511,
         type: 3}
@@ -843,8 +843,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   inputReader: {fileID: 11400000, guid: bd214f09925626a4dad4aee26dc9476a, type: 2}
-  playerMoveSpeed: 7
-  playerJumpForce: 35
+  playerMoveSpeed: 3.652174
+  playerJumpForce: 17.705748
 --- !u!114 &4113087360306586132
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -857,9 +857,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4382c6d136a45c4998d9f0a80e872ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAutoPilot
-  moveSpeed: 6
-  jumpForce: 20
-  attackRange: 2.5
+  moveSpeed: 3.1304348
+  jumpForce: 10.11757
+  attackRange: 1.3043478
   decisionInterval: 0.6
   decisionIntervalVariance: 0.25
   blockChance: 0.25
@@ -881,7 +881,7 @@ MonoBehaviour:
   playerMaxHealth: 100
   playerHealth: 100
   roundWins: 0
-  knockbackForce: 8
+  knockbackForce: 4.173913
   blockDamageMultiplier: 0.2
 --- !u!114 &8677018864368439860
 MonoBehaviour:
@@ -909,10 +909,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterPhysics
   rayOriginOffset: 0.15
-  rayDistance: 0.3
+  rayDistance: 0.15652174
   groundLayerMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 131072
   invertFacing: 0
 --- !u!114 &7601421976674883818
 MonoBehaviour:
