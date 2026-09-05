@@ -36,6 +36,25 @@ public class InputReader : ScriptableObject, PlayerInput.IGroundActions, PlayerI
         }
     }
 
+    private void OnDisable()
+    {
+        if (_playerInput == null)
+        {
+            return;
+        }
+
+        // PlayerInput is generated and owns native Input System action maps. Leaving
+        // either map enabled when this shared ScriptableObject unloads makes its
+        // finalizer assert and leaves the input system holding stale callbacks across
+        // play-mode restarts / scene changes. Clear both callback sets, disable every
+        // map, then dispose the generated asset before allowing it to be collected.
+        _playerInput.Ground.SetCallbacks(null);
+        _playerInput.UI.SetCallbacks(null);
+        _playerInput.Disable();
+        _playerInput.Dispose();
+        _playerInput = null;
+    }
+
     public void OnMove(InputAction.CallbackContext context)
     {
         MoveEvent.Invoke(context.ReadValue<Vector2>());
