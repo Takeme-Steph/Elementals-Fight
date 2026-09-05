@@ -908,6 +908,8 @@ Not independently re-verified, taken on Cowork's own explicit verification note:
 
 **Rune-density refinement (2026-09-05):** Measured the reference rail proportions directly and tightened the decoder from 24 oversized glyphs to 40 smaller glyphs across 96% of the prism interior. Expanded the neutral procedural atlas from 12 to 16 variants, reduced the rail to a reference-matched 58px height, and moved the first/last glyph centres to within roughly 3% of the border ends. Only the dim runes ahead of the progress tip now scramble; illuminated runes behind it remain decoded and stable.
 
+**Typography refinement (2026-09-05):** Replaced the loading overlay's implicit Liberation Sans fallback with two bundled OFL faces: Rajdhani SemiBold for technical metadata, lore, and percentage, and Cinzel Bold for fighter labels, `(vs)`, and monograms. Added an idempotent Editor/build-time generator for 1024px static TMP SDF atlases, plus two shared runtime outline materials and reference-matched sizing/spacing. This avoids runtime font rasterization on WebGL/mobile and synthetic bolding, while substantially improving contrast over the panorama. Current strings are covered; authentic Yoruba diacritics such as `Ṣ`, `Ọ`, and `Ẹ` will require a deliberate matching fallback font before those spellings are introduced.
+
 ---
 ### [ ] Mixamo placeholder clips sink Yemoja's feet through the floor - separate bug from the idle warping, still open
 **Why:** While diagnosing the custom idle's retarget warping (fixed, see `claude/yemoja-idle-retarget-fix.md`), toe-bone floor clearance was measured across clips on Yemoja. Her own `Yemoja@Idle` never goes below the floor: **+0.0401 to +0.0713** world units. The Mixamo placeholders do, badly and constantly:

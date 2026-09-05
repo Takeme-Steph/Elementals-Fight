@@ -75,6 +75,10 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private Sprite circleSprite;
     private Sprite[] runeSprites;
     private Texture2D runeAtlas;
+    private TMP_FontAsset technicalFont;
+    private TMP_FontAsset displayFont;
+    private Material technicalTextMaterial;
+    private Material displayTextMaterial;
     private float displayedProgress;
     private float nextRuneShuffle;
     private float nextLoreSwap;
@@ -162,6 +166,14 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     {
         accent = arena != null ? arena.Accent : new Color(0.18f, 0.83f, 0.9f);
         glow = arena != null ? arena.Glow : new Color(0.38f, 0.95f, 1f);
+        technicalFont = Resources.Load<TMP_FontAsset>("MythicLoadingFonts/Rajdhani-SemiBold SDF");
+        displayFont = Resources.Load<TMP_FontAsset>("MythicLoadingFonts/Cinzel-Bold SDF");
+        if (technicalFont == null || displayFont == null)
+        {
+            Debug.LogWarning("MythicLoadingOverlay: custom TMP fonts are missing; run Elementals Fight > Mythic Loading > Generate Missing Font Assets.");
+        }
+        technicalTextMaterial = CreateOutlinedTextMaterial(technicalFont, 0.06f, new Color(0f, 0.025f, 0.055f, 0.86f));
+        displayTextMaterial = CreateOutlinedTextMaterial(displayFont, 0.09f, new Color(0.06f, 0.025f, 0.005f, 0.92f));
         circleSprite = CreateCircleSprite();
         runeSprites = CreateRuneSpriteAtlas();
 
@@ -229,12 +241,16 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
 
     private void CreateTopAnchors(Transform parent)
     {
-        TMP_Text sync = CreateText("TopLeft_StatusText", parent, "[ SYNCHRONIZING BOUNDARIES ]", 22, FontStyles.Bold, Color.white);
+        TMP_Text sync = CreateText("TopLeft_StatusText", parent, "[ SYNCHRONIZING BOUNDARIES ]", 28, FontStyles.Normal, new Color(0.94f, 0.98f, 1f), technicalFont);
         Pin(sync.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(520f, 48f), new Vector2(50f, -50f));
         sync.alignment = TextAlignmentOptions.Left;
-        TMP_Text stage = CreateText("TopRight_StageText", parent, $"[ STAGE: {(arena != null ? arena.DisplayName : "MYTHIC GATEWAY").ToUpperInvariant()} ]", 22, FontStyles.Bold, Color.white);
+        sync.characterSpacing = 3.5f;
+        AddTextShadow(sync, 0.82f, new Vector2(2f, -2f));
+        TMP_Text stage = CreateText("TopRight_StageText", parent, $"[ STAGE: {(arena != null ? arena.DisplayName : "MYTHIC GATEWAY").ToUpperInvariant()} ]", 28, FontStyles.Normal, new Color(0.94f, 0.98f, 1f), technicalFont);
         Pin(stage.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(520f, 48f), new Vector2(-50f, -50f));
         stage.alignment = TextAlignmentOptions.Right;
+        stage.characterSpacing = 3.5f;
+        AddTextShadow(stage, 0.82f, new Vector2(2f, -2f));
     }
 
     private void CreateMatchup(Transform parent, int playerIndex, int opponentIndex)
@@ -248,10 +264,11 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         CreatePlayerPanel(matchup, "P1_Panel", p1, false);
         CreatePlayerPanel(matchup, "P2_Panel", p2, true);
 
-        TMP_Text versus = CreateText("VS_Text", matchup, "(vs)", 38, FontStyles.Bold, new Color(1f, 0.82f, 0.42f));
+        TMP_Text versus = CreateText("VS_Text", matchup, "(vs)", 52, FontStyles.Normal, new Color(1f, 0.84f, 0.48f), displayFont);
         Pin(versus.rectTransform, new Vector2(0.5f, 0.57f), new Vector2(0.5f, 0.5f), new Vector2(120f, 72f), Vector2.zero);
         versus.alignment = TextAlignmentOptions.Center;
-        versus.characterSpacing = 5f;
+        versus.characterSpacing = 1.5f;
+        AddTextShadow(versus, 0.92f, new Vector2(3f, -3f));
     }
 
     private void CreatePlayerPanel(Transform matchup, string panelName, FighterStyle fighter, bool right)
@@ -271,27 +288,34 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         Shadow portraitShadow = frame.gameObject.AddComponent<Shadow>();
         portraitShadow.effectColor = WithAlpha(Color.black, 0.82f);
         portraitShadow.effectDistance = new Vector2(5f, -7f);
-        TMP_Text initial = CreateText("PortraitGraphic", frame.transform, fighter.initial, 82, FontStyles.Bold, fighter.glow);
+        TMP_Text initial = CreateText("PortraitGraphic", frame.transform, fighter.initial, 82, FontStyles.Normal, fighter.glow, displayFont);
         Stretch(initial.rectTransform);
         initial.alignment = TextAlignmentOptions.Center;
         initial.rectTransform.anchoredPosition = new Vector2(0f, fighter.name == "Yemoja" ? YemojaPortraitGraphicOffsetY : 0f);
         initial.gameObject.AddComponent<Shadow>().effectColor = WithAlpha(fighter.primary, 0.72f);
 
-        TMP_Text label = CreateText("PlayerNameText", panel, $"{(right ? "P2" : "P1")}: {fighter.name.ToUpperInvariant()}", 25, FontStyles.Bold, Color.white);
-        Pin(label.rectTransform, new Vector2(0.5f, 0.10f), new Vector2(0.5f, 0.5f), new Vector2(300f, 48f), Vector2.zero);
+        TMP_Text label = CreateText("PlayerNameText", panel, $"{(right ? "P2" : "P1")}: {fighter.name.ToUpperInvariant()}", 38, FontStyles.Normal, Color.white, displayFont);
+        Pin(label.rectTransform, new Vector2(0.5f, 0.10f), new Vector2(0.5f, 0.5f), new Vector2(400f, 52f), Vector2.zero);
         label.alignment = TextAlignmentOptions.Center;
-        label.color = Color.Lerp(new Color(1f, 0.82f, 0.42f), fighter.glow, 0.22f);
+        label.enableAutoSizing = true;
+        label.fontSizeMin = 28f;
+        label.fontSizeMax = 38f;
+        label.color = new Color(1f, 0.82f, 0.42f);
+        label.characterSpacing = 1f;
+        AddTextShadow(label, 0.94f, new Vector2(3f, -3f));
     }
 
     private void CreateLowerDecoder(Transform parent)
     {
         Image ticker = CreateImage("LoreTicker", parent, new Color(0.01f, 0.025f, 0.05f, 0.72f));
         Pin(ticker.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(1560f, 66f), new Vector2(50f, 150f));
-        loreText = CreateText("BottomLeft_LoreText", parent, string.Empty, 20, FontStyles.Normal, new Color(0.89f, 0.95f, 1f));
+        loreText = CreateText("BottomLeft_LoreText", parent, string.Empty, 26, FontStyles.Normal, new Color(0.94f, 0.98f, 1f), technicalFont);
         Pin(loreText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(1560f, 66f), new Vector2(50f, 150f));
         loreText.alignment = TextAlignmentOptions.Left;
         loreText.margin = new Vector4(26f, 10f, 26f, 10f);
         loreText.textWrappingMode = TextWrappingModes.NoWrap;
+        loreText.characterSpacing = 0.5f;
+        AddTextShadow(loreText, 0.92f, new Vector2(2f, -2f));
 
         loadingBarRect = CreateRect("LoadingBarContainer", parent);
         loadingBarRect.anchorMin = new Vector2(0f, 0f);
@@ -373,11 +397,13 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         glowingRuneRail.anchorMax = new Vector2(0f, 0.88f);
         glowingRuneRail.pivot = new Vector2(0f, 0.5f);
         glowingRuneRail.anchoredPosition = Vector2.zero;
-        BuildRuneImages(glowingRuneRail, glowingRuneImages, WithAlpha(glow, 0.96f), 0.025f, RuneProgressWidth);
+        BuildRuneImages(glowingRuneRail, glowingRuneImages, WithAlpha(glow, 0.96f), RuneProgressStart, RuneProgressWidth);
 
-        progressText = CreateText("BottomRight_Percentage", loadingBarRect, "0%", 22, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
+        progressText = CreateText("BottomRight_Percentage", loadingBarRect, "0%", 30, FontStyles.Normal, new Color(0.91f, 0.97f, 1f), technicalFont);
         Pin(progressText.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(126f, 48f), new Vector2(-18f, 0f));
         progressText.alignment = TextAlignmentOptions.Right;
+        progressText.characterSpacing = 1f;
+        AddTextShadow(progressText, 0.95f, new Vector2(2f, -2f));
     }
 
     private void CreateWarpFlash(Transform parent)
@@ -775,6 +801,8 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             DestroyRuntimeObject(circleSprite);
             DestroyRuntimeObject(circleTexture);
         }
+        DestroyRuntimeObject(technicalTextMaterial);
+        DestroyRuntimeObject(displayTextMaterial);
     }
 
     private static void DestroyRuntimeObject(Object target)
@@ -813,7 +841,49 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         prism.Configure(bevel, progress);
         return prism;
     }
-    private static TMP_Text CreateText(string name, Transform parent, string text, float size, FontStyles style, Color color) { TextMeshProUGUI label = CreateUi<TextMeshProUGUI>(name, parent); label.text = text; label.fontSize = size; label.fontStyle = style; label.color = color; label.raycastTarget = false; return label; }
+    private TMP_Text CreateText(string name, Transform parent, string text, float size, FontStyles style, Color color, TMP_FontAsset font = null)
+    {
+        TextMeshProUGUI label = CreateUi<TextMeshProUGUI>(name, parent);
+        label.text = text;
+        TMP_FontAsset resolvedFont = font != null ? font : technicalFont;
+        if (resolvedFont != null)
+        {
+            label.font = resolvedFont;
+            Material sharedMaterial = resolvedFont == displayFont ? displayTextMaterial : technicalTextMaterial;
+            if (sharedMaterial != null)
+            {
+                label.fontSharedMaterial = sharedMaterial;
+            }
+        }
+        label.fontSize = size;
+        label.fontStyle = style;
+        label.color = color;
+        label.raycastTarget = false;
+        return label;
+    }
+    private static Material CreateOutlinedTextMaterial(TMP_FontAsset font, float outlineWidth, Color outlineColor)
+    {
+        if (font == null || font.material == null)
+        {
+            return null;
+        }
+
+        ShaderUtilities.GetShaderPropertyIDs();
+        Material material = new Material(font.material)
+        {
+            name = font.name + " Gateway Outline"
+        };
+        material.SetFloat(ShaderUtilities.ID_OutlineWidth, outlineWidth);
+        material.SetColor(ShaderUtilities.ID_OutlineColor, outlineColor);
+        return material;
+    }
+    private static void AddTextShadow(TMP_Text text, float alpha, Vector2 offset)
+    {
+        Shadow shadow = text.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0.015f, 0.03f, alpha);
+        shadow.effectDistance = offset;
+        shadow.useGraphicAlpha = true;
+    }
     private static void Stretch(RectTransform rect, Vector2 inset = default) { rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = inset; rect.offsetMax = -inset; }
     private static void SetAnchors(RectTransform rect, Vector2 min, Vector2 max) { rect.anchorMin = min; rect.anchorMax = max; rect.offsetMin = rect.offsetMax = Vector2.zero; }
     private static void Pin(RectTransform rect, Vector2 anchor, Vector2 pivot, Vector2 size, Vector2 position)
