@@ -1,0 +1,273 @@
+YEMOJA HANDOFF - 2026-08-30
+Written at the end of the tattoo / hair-bones / skin-pass session.
+NEXT UP: MOBILE OPTIMISATION SCAN, then DEFORMATION REVIEW + CLAVICLE BONES.
+
+CURRENT FILE
+  Backups/Yemoja_WORKING_v101_seamNavel.blend
+  Rig: 80 bones (was 94). Objects: 28. 'hair experimemnt' DELETED this session
+  at Stephanie's instruction - this SUPERSEDES the old "do not delete" rule.
+
+VERSION TRAIL THIS SESSION (all in Backups/)
+  v91 tattoos start | v92 her hand edits | v93 conform | v94 baked
+  v95 pre-hair-bones | v96 hair bones | v97 hair jewellery | v98/v99 eye glow
+  v100 skin pass | v101 seam + small navel  <- CURRENT
+
+======================================================================
+WHAT WAS BUILT
+======================================================================
+TATTOOS - Yemoja_Tattoos, 1828 tris, 1 draw call
+  - 5 decals per Stephanie's Gemini reference sheet: upper-arm vortex (pair),
+    forearm flow (pair), thigh spiral (LEFT only), shin+ankle twists (RIGHT only),
+    chest emblem (centre), plus the neck fins.
+  - Own UV unwrap (NOT the body's) - required, because the body UV is mirrored
+    and cannot express left-only / right-only decals.
+  - Artwork is PARAMETRIC (spirals, bezier sweeps, tapered strokes, curls, dots),
+    generated in script. Each motif is ~6 numbers: t-range along bone, theta
+    centre/width, stroke widths. Re-tunable without repainting.
+  - Baked to Yemoja_Tattoo_Baked_512.png: RGB = deep->pale teal gradient,
+    A = shape. Gradient anchored to measured palette: ankle RGB(30,124,135),
+    neck RGB(199,228,226). Derived from the nail ramp, extended at the deep end.
+  - RIG_tattoo_glow Value node -> Emission Strength, default 0.0. ONE Unity float.
+    Ramp feeds Base Color AND Emission Color so glow keeps the gradient.
+  - Shrinkwrap modifier "Conform" (PROJECT, both directions, ABOVE_SURFACE,
+    offset 0.012) sits BEFORE the Armature. Stephanie can now hand-edit decal
+    vertices freely and they re-seat on the skin automatically.
+    *** APPLY IT BEFORE FBX EXPORT - Unity has no shrinkwrap. ***
+  - Neck fins: erased from the skin atlas (v13->v14) using local-background-deficit
+    masking, then rebuilt in the decal mesh from the SAME extracted pixel mask, so
+    the shape is preserved by construction. A faint brown rim remains on the skin;
+    Stephanie accepted it - the decal covers it. Revisit in the skin pass if wanted.
+
+HAIR BONES - 20 bones, 10 groups of 2
+  - hair_grp00_0/1 .. hair_grp09_0/1. _1 chained to _0, _0 parented to Head.
+  - REPLACED 34 stale hair_loc* bones that were positioned against an OLD loc
+    layout (only 12 of 17 groups were being used; one had 12 locs).
+  - 46 real locs clustered in root_uv space. UV-space clustering was chosen over
+    3D: quality is identical (23.5 deg vs 23.4 deg worst direction deviation) but
+    it is 100% reproducible inside the node tree, where 3D clustering only agreed
+    91.3% (4 locs would have bound to the wrong bone).
+  - New node group "Hair_Bone_Weights" sits between Locs_Generator and Armature.
+    Locs_Generator itself was NOT modified. It reads root_uv (group) and
+    root_arclen (smoothstep blend 35%-85% of strand length), writes 20 weights,
+    and zeroes Head/Neck on hair + jewellery.
+  - Selection = Hair_mat OR Jewelry_mat, so beads and cuffs ride their own strand.
+  - Verified: weight sum exactly 1.0, max 2 influences/vertex, 0 static jewellery.
+
+EYES - RIG_eye_glow, default 0.9375
+  - Yemoja_Eye_Emission_v2_soft.png (512): wide feathered halo 42% + limbal ring
+    62%. The ring shape is deliberate - a flat bright disc is what bloom turns
+    into an "owl eye". Peak emission 0.296 (was 0.533).
+  - Emission is MASKED because Yemoja_Eye_mat is also on Eyeliner, Eyeliner_Lower
+    and Scalp. Unmasked, those would glow.
+
+SKIN PASS
+  - Subsurface Weight 0.08 -> 0.22 (radius .36/.13/.08, scale .09). BLENDER ONLY -
+    URP Lit has no SSS. See recommendations below for the Unity equivalent.
+  - Pore-scale breakup baked into the smoothness channel: std 0.1142 -> 0.1223,
+    mean unchanged. High-pass filtered first, so LOW-FREQUENCY CONTENT (her muscle
+    tone, which she wants kept) moved by only 0.0037 mean.
+  - Navel: she had NO cavity (0.0096 deep, wants 0.03-0.06) and almost no painted
+    one (0.0068 darker than skin). Built in the normal map + base-colour occlusion.
+    NOT in geometry - vertices there are 0.16-0.19 apart, 3-4x coarser than her
+    chest; a crater radius caught ONE vertex. Sized down 75% at her request:
+    radius now 6.1 texels / 0.0375 world diameter.
+  - MIRROR SEAM (body AND clothes) - see traps below.
+
+======================================================================
+TRAPS LEARNED THIS SESSION - these each cost real time
+======================================================================
+  - THE ARMATURE HAS SCALE 0.01. Anything parented to it must copy
+    matrix_parent_inverse from an existing child (the body). Setting matrix_world
+    BEFORE assigning .parent does NOT survive. Cost me a decal that was built
+    perfectly and rendered as a 0.004-unit speck near the origin.
+  - CHECKING CLEARANCE AT VERTICES IS NOT CHECKING CLEARANCE. A conforming patch
+    fails BETWEEN its samples. Vertex-only checks passed while 351/3360 face
+    centres and edge midpoints sat up to -0.067 under the skin. Always sample
+    face centres and edge midpoints.
+  - find_nearest GRABS THE CLOSEST SURFACE IN ANY DIRECTION. In concave areas
+    (between the collarbones) it latches onto the wrong side and a relaxation loop
+    then drives the error away. Use a RAY CAST straight down the vertex normal
+    instead. This made the chest worse before it made it better.
+  - THE ARMATURE MODIFIER RESOLVES WEIGHTS VIA THE OBJECT'S VERTEX GROUPS, NOT
+    NAMED ATTRIBUTES. Geometry Nodes will write hair_grp03_1 as a float attribute
+    with perfect values and the armature ignores it completely until an actual
+    (even empty) vertex group of that name exists on the object. Nothing warns you.
+  - pose_position WAS SET TO 'REST'. No amount of correct weighting moves anything.
+    Two pose tests read 0.0 before I thought to check. Check it FIRST.
+  - Vertex groups live in the mesh DEFORM LAYER, not in mesh.attributes. Reading
+    weights via .attributes returns nothing and looks like corruption.
+  - MIRRORED UV = FLIPPED TANGENT = SEAM. Both the body and the clothes have
+    mirrored UVs. The normal map's RED channel encodes tilt along the tangent, so
+    the same texel tilts opposite ways either side of the midline and builds a
+    ridge down her centre. Body red deviation peaked at 0.4451; clothes at 0.5
+    (the theoretical max). Fixed by feathering red toward 0.5 along the seam curve
+    (14 texels body, 12 clothes). The geometry was innocent throughout: 0 duplicate
+    verts, split normals agreeing to 0.03 deg.
+    *** ANY NEW NORMAL-MAP PAINT NEAR THE MIDLINE REINTRODUCES THIS. ***
+    Exception: a feature CENTRED on the seam (the navel) NEEDS non-neutral red -
+    the mirror makes it symmetric. Paint those AFTER the neutralisation pass.
+  - You cannot bpy.data.libraries.load() from the file that is currently open.
+    Save forward to a new version first, then the previous one becomes readable.
+  - Blender's dashed "relationship lines" run from each child origin to the parent
+    origin - i.e. straight down her centre on Z, because 10 objects are parented to
+    an Armature whose origin is at world zero. VIEWPORT OVERLAY ONLY, never renders.
+    Turned off this session.
+  - Armature.001 - a full 94-bone DUPLICATE rig, visible, referenced by nothing -
+    was found and deleted. Would have exported a second skeleton to Unity.
+
+======================================================================
+THE NEXT JOB 1: MOBILE OPTIMISATION SCAN  (deferred all session, on purpose)
+======================================================================
+Stephanie asked for this to wait until all changes were done. They are now.
+
+BASELINE MEASURED 2026-08-30 (side/fight view, 1080x1080, whole body framed):
+  Shipping triangles      45,446  (+1,828 tattoos = ~47,274 now)
+  Rendered fragments   1,210,164 px
+  Silhouette coverage    244,809 px
+  OVERDRAW                  4.94x
+  Alpha-tested share        35.9%
+  Draw calls                 9 -> 10 with tattoos
+
+THE BIGGEST SINGLE WIN, STILL UNCLAIMED:
+  Backface culling is OFF on every material except Yemoja_Jewelry_mat.
+  Enabling it on Body, Clothes, loc tubes, Eye and Eyeliner removes
+  446,549 fragments - a 36.9% cut. Do NOT enable it on Fuzz or Lashes
+  (genuine two-sided cards), and check Yemoja_Nails first: every nail is TWO
+  shells with opposite winding, a hand-built two-sided hack that becomes
+  load-bearing the moment culling is switched on.
+
+ALSO OPEN:
+  - Yemoja_Clothes is 13,154 tris, still the largest object, never optimised.
+  - Two empty material slots on Yemoja_Scalp's evaluated output (rule 210).
+  - Stray hair_attach UV layer - strip before export.
+  - Tattoo alpha map is 512 and ~9% covered; fine, but could pack tighter.
+  - MEASUREMENT WARNING: the existing locgen.mobile_cost operator uses
+    world_to_camera_view WITHOUT viewport clipping. That is fine for one object
+    framed in shot, but pointed at the whole character it reports nonsense -
+    off-screen geometry projects to huge fake pixel areas (a 130-tri charm
+    measured larger than the entire 14,744-tri body). Use Sutherland-Hodgman
+    clipping for whole-character numbers. Also note its "alpha share" is the
+    CARD-VS-TUBE split within the locs only, NOT a character-wide figure.
+
+======================================================================
+THE NEXT JOB 2: DEFORMATION REVIEW + CLAVICLE BONES
+======================================================================
+Stephanie's brief: she is a fighting character with dramatic moves and combos.
+Check how she deforms in pose, and add a CLAVICLE bone to drive shoulder and
+neck deformation.
+
+Notes for whoever picks this up:
+  - The rig currently has mixamorig:Shoulder.L/R already present. Confirm whether
+    a genuine clavicle is missing or whether the existing Shoulder bones are
+    mis-weighted, BEFORE adding bones - a bone count change forces a Unity
+    None->Human avatar reset and a re-audit of the humanoid map (see v4 record).
+  - Test poses that actually stress it: arm overhead, arm across chest, deep
+    shoulder rotation. The Sword-and-Shield attack clips are the real-world case.
+  - The chest tattoo decal and the neck fins sit exactly over the clavicle/neck
+    region. They are shrinkwrapped and armature-skinned, so re-check them after
+    any weight change - and remember the shrinkwrap targets the body's EVALUATED
+    mesh, so edit in REST pose or it conforms to a posed body.
+  - Yemoja_Tattoos weights were copied from the nearest body vertex. If clavicle
+    weights change on the body, re-run that transfer.
+
+======================================================================
+FACE REALISM - RECOMMENDATIONS (measured, not yet done)
+======================================================================
+Stephanie prefers texture over geometry. Measured on the current atlas:
+  base colour high-frequency std  0.0088   <- very low, this is the core problem
+  base colour mid-frequency std   0.0173
+  normal map high-frequency std   0.0190
+Real skin sits roughly 2-4x higher in high-frequency content. Her face is smooth
+at the pore scale in BOTH colour and normal, which is what reads as doll-like.
+
+In priority order, all texture-only unless noted:
+  1. TILING DETAIL NORMAL for pores. A 256 tiling map through URP Lit's Detail
+     Normal slot gives real pore detail at ANY camera distance for ~0.2 MB, and
+     does not depend on atlas resolution. NOTE: URP takes detail tiling from
+     _DetailAlbedoMap_ST, so tiling must be set on _DetailAlbedoMap even when only
+     a detail NORMAL is assigned (this project already learned that once).
+  2. FAKE THE SUBSURFACE FOR UNITY. The 0.22 subsurface added this session is
+     Blender-only. In URP, fake it in the base colour: warm red-shift the thin
+     areas - nostril wings, ear rims, upper eyelid, lips, the web between fingers.
+     Cheap, and it is most of what SSS buys you at game distance.
+  3. CREASE OCCLUSION baked into base colour: nostril crease, inner eye corners,
+     lip corners, under the brow ridge, the ear-to-skull crease. Mid-frequency std
+     is only 0.0173; this is where the face currently reads flat.
+  4. EYE MOISTURE. A wet specular line where the lower lid meets the eye, and a
+     glossier patch at the tear duct. Small area, disproportionate realism gain.
+  5. T-ZONE GLOSS VARIATION in the smoothness map - forehead and nose bridge
+     glossier, cheeks less. She wants dewy, and dewy is UNEVEN gloss. The global
+     pore breakup added this session helps but is not face-specific.
+  6. ASYMMETRY - the highest-impact change, and the expensive one. Her face UV is
+     PERFECTLY mirrored (449/449 pairs identical), so every freckle, every
+     highlight, every crease is exactly symmetric. Perfect symmetry is one of the
+     strongest "not real" signals in a face. Fixing it means giving the HEAD its
+     own non-mirrored UV island and repainting it. Geometry unchanged, but it is a
+     UV re-layout plus a texture pass. Worth doing only if she wants
+     CharacterSelect close-ups to really hold up.
+  Geometry, only if she changes her mind: eyelid thickness, and the ears (44 verts,
+  essentially flush with the skull - she says she hand-tweaked them already).
+
+======================================================================
+UNITY HANDOFF (for Cowork, not for the Blender chat)
+======================================================================
+NEW / CHANGED MAPS - import settings matter, this project has shipped these wrong:
+  sRGB ON  : Yemoja_Color_SkinGrade_v16_navelSmall.png
+  sRGB ON  : Yemoja_Tattoo_Baked_512.png      (colour now, not a mask)
+  sRGB ON  : Yemoja_Eye_Emission_v2_soft.png
+  sRGB OFF : Yemoja_MetallicSmoothness_v10_pores.png
+  NORMAL   : Yemoja_Normal_v10_navelSmall.png
+  NORMAL   : Clothes_Normal_v2_seam.png
+
+RIG CHANGED: 94 -> 80 bones. Per the v4 rule this REQUIRES the
+  animationType=None -> reimport -> Human + CreateFromThisModel -> reimport reset,
+  then a re-audit of the humanoid map. Watch for the auto-mapper binding Jaw to a
+  hair_grp* bone the way it grabbed hair_loc16_0 before. Yemoja has no jaw bone.
+  Marker parenting must be re-verified - bone names changed, and the v2/v4 rule is
+  that RENAMING or RESTRUCTURING the bones markers hang off is what breaks it.
+
+NEW MATERIAL: Yemoja_Tattoos_mat (+1 draw call). Two runtime floats to expose:
+  RIG_tattoo_glow (default 0.0) and RIG_eye_glow (default 0.9375).
+  Eye glow was tuned blind - Cycles showed almost no change across 0.0-1.5 at
+  fight-camera size because the perceived strength comes from BLOOM, which Cycles
+  does not apply. Tune it against URP's actual post-processing volume.
+
+STILL OPEN AND UNCHANGED, ALL COWORK'S:
+  Animation events (PerformAttack / StopAttacking / EndHit) absent from all 8
+  clips. HER ATTACKS STILL DEAL NO DAMAGE. This is the single biggest gap and has
+  been open since v2. Root BoxCollider and hitbox sizes still pre-resculpt.
+  CharacterPhysics.groundLayerMask still 0.
+
+
+======================================================================
+CORRECTION - NAVEL / MIRRORED UV  (added after the note was first written)
+======================================================================
+The first two navel attempts were WRONG and the reason is worth keeping.
+
+Her body UV is perfectly mirrored: for the navel region, left_u and right_u
+ranges are IDENTICAL and corr(u, signed x) is exactly 0.0. The UV cannot tell
+her left from her right. The FOLD - where the midline (x=0) lands - is a single
+line in UV; texels on the far side of it are never sampled.
+
+I centred the painted crater 11.3 texels INSIDE the fold with a radius of only
+6.1, so the entire crater sat on the sampled side. Both halves of her body then
+rendered the WHOLE crater, producing TWO complete navels meeting at her midline.
+Shrinking it made two smaller navels, not one correct one.
+
+CORRECT METHOD for any feature centred on the midline:
+  1. Take the UV of an actual x=0 vertex - that is the fold, exactly.
+     Do NOT interpolate a UV from a nearby polygon; that lands off the fold.
+  2. Work out the UV direction that corresponds to increasing |x|
+     (here: normalize(-0.1336, +0.1336), and 0.1889 UV units per world unit).
+  3. Paint only the HALF of the feature on the sampled side of the fold.
+     The mirror supplies the other half and the two join seamlessly.
+  Final: half-crater radius 12.2 texels -> one navel 0.0632 world units across
+  (~14 mm at her real-world scale, anatomically right).
+  Maps: Yemoja_Normal_v11_navelMirrored.png (NORMAL type),
+        Yemoja_Color_SkinGrade_v17_navelMirrored.png (sRGB ON).
+  These SUPERSEDE the v10 / v16 entries listed in the Unity handoff above.
+
+Same principle applies to anything else placed on her centre line - the chest
+emblem decal is safe because Yemoja_Tattoos has its OWN non-mirrored UV, but any
+future paint into the SKIN atlas near the midline must use the half-and-mirror
+method.

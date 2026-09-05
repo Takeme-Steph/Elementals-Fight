@@ -1,0 +1,551 @@
+"""
+Yemoja animation library  --  BlenderTools/YemojaDesignArtifacts/yemoja_anim_lib.py
+Everything Yemoja-related lives in YemojaDesignArtifacts; other characters get
+their own sibling folder. Renders go to YemojaDesignArtifacts/anim_review.
+For Yemoja_WORKING_v112_anim.blend (80 bones, Unity Humanoid target).
+
+Everything in here was MEASURED on this rig, not assumed. See
+claude/yemoja-animation-setup.md in the Claude project for the workings.
+
+THE FRAME
+---------
+The armature DATA is still in FBX Y-up space; the Armature OBJECT carries the
+Y-up -> Z-up conversion, scale 0.01, and the z=0 floor fix (Z +0.14324).
+Inside armature space:
+
+    +X = her LEFT          +Y = UP          +Z = FORWARD (toward the opponent)
+
+Measured rotation signs:
+    Spine/Neck/Head   +X lean forward,  +Y turn to her left,  +Z tilt to her right
+    UpLeg   -X = knee lifts forward (hip flexion);  +X = leg swings back
+    Leg     +X = knee bends
+    Foot    same-axis rotations ADD down a chain, so a flat sole needs
+            Foot_X = -(UpLeg_X + Leg_X)
+    Arm.L +Z / Arm.R -Z          raise the arm sideways
+    ForeArm -X                   elbow curl (both sides, same sign)
+    Shoulder.L +Z / Shoulder.R -Z    elevate the clavicle
+    Shoulder.L -Y / Shoulder.R +Y    protract it
+    finger bones: local +X = curl, local Z = spread, local Y = useless twist
+
+MIRROR RULE (proved algebraically and by measurement): X keeps its sign, Y and Z flip.
+
+HARD RULES (README_animation_guidelines.md)
+    * NEVER key hair_grp* -- non-humanoid bones are dropped silently on import.
+    * CLAVICLE RULE: arm above shoulder height -> elevate the clavicle by ~1/3 of
+      the arm's elevation, or the shoulder cap loses ~22% of its surface area.
+      Punches and thrusts need clavicle PROTRACTION too.
+    * Author in place. 30 fps. Feet plant on world z = 0.
+"""
+
+import bpy, math
+from mathutils import Matrix, Vector
+
+ARM_NAME = "Armature"
+PFX      = "mixamorig:"
+AXES     = {"X": Vector((1.0,0.0,0.0)), "Y": Vector((0.0,1.0,0.0)), "Z": Vector((0.0,0.0,1.0))}
+
+
+# ----------------------------------------------------------------- basics ---
+def armature():
+    return bpy.data.objects[ARM_NAME]
+
+def full(name):
+    return name if name.startswith(PFX) or name.startswith("hair_") else PFX + name
+
+def humanoid_bones(arm=None):
+    """Bones Unity's Humanoid retargeter actually carries."""
+    arm = arm or armature()
+    out = []
+    for pb in arm.pose.bones:
+        n = pb.name
+        if not n.startswith(PFX):     continue    # hair_grp* -- never key
+        if n.endswith("_end"):        continue
+        if n.startswith(PFX + "Eye"): continue    # unverified in the humanoid map
+        out.append(n)
+    return out
+
+def clear_pose():
+    for pb in armature().pose.bones:
+        pb.matrix_basis = Matrix.Identity(4)
+    bpy.context.view_layer.update()
+
+def rot(name, axis, deg):
+    """Rotate a bone by deg about an ARMATURE-SPACE axis, on top of whatever it
+    is already doing. Order of calls matters -- rotations do not commute."""
+    pb = armature().pose.bones[full(name)]
+    M  = pb.bone.matrix_local.to_3x3()
+    R  = Matrix.Rotation(math.radians(deg), 3, AXES[axis])
+    pb.matrix_basis = (M.inverted() @ R @ M).to_4x4() @ pb.matrix_basis
+
+def lrot(name, axis, deg):
+    """Rotate about the bone's OWN local axis."""
+    pb = armature().pose.bones[full(name)]
+    pb.matrix_basis = pb.matrix_basis @ Matrix.Rotation(math.radians(deg), 4, AXES[axis])
+
+def rot_axis(name, vec, deg):
+    """Rotate about an arbitrary ARMATURE-SPACE axis vector."""
+    pb = armature().pose.bones[full(name)]
+    M  = pb.bone.matrix_local.to_3x3()
+    R  = Matrix.Rotation(math.radians(deg), 3, Vector(vec).normalized())
+    pb.matrix_basis = (M.inverted() @ R @ M).to_4x4() @ pb.matrix_basis
+
+def loc(name, x=0.0, y=0.0, z=0.0):
+    """Translate in armature-space units. Only Hips should ever be translated --
+    Unity Humanoid ignores translation on every other bone."""
+    pb = armature().pose.bones[full(name)]
+    M  = pb.bone.matrix_local.to_3x3()
+    pb.matrix_basis.translation += M.inverted() @ Vector((x, y, z))
+
+
+# ------------------------------------------------------------ pose specs ---
+# A pose is {bone: [ops]}, ops applied in order: ("X", 20) or ("loc", x, y, z).
+def mirror_ops(ops):
+    out = []
+    for op in ops:
+        if   op[0] == "loc": out.append(("loc", -op[1], op[2], op[3]))
+        elif op[0] == "X":   out.append(op)
+        else:                out.append((op[0], -op[1]))
+    return out
+
+def mirror_name(n):
+    if n.endswith(".L"): return n[:-2] + ".R"
+    if n.endswith(".R"): return n[:-2] + ".L"
+    return n
+
+def mirror_pose(pose):
+    out = dict(pose)
+    for n, ops in pose.items():
+        if n.endswith(".L"):
+            out.setdefault(mirror_name(n), mirror_ops(ops))
+    return out
+
+def apply_pose(pose, reset=True):
+    if reset:
+        clear_pose()
+    for name, ops in pose.items():
+        for op in ops:
+            if op[0] == "loc": loc(name, op[1], op[2], op[3])
+            else:              rot(name, op[0], op[1])
+    bpy.context.view_layer.update()
+
+
+# ------------------------------------------------- deterministic limb posing ---
+# A shortest-arc "point the bone at X" leaves the bone's ROLL unconstrained: the
+# joint centres land right but the skin corkscrews and the elbow looks like it
+# bends sideways. So we CONSTRUCT the orientation instead of rotating into it.
+# Measured: for BOTH arms local X is the elbow hinge, and for a correct curl the
+# bend-plane normal n = (elbow-shoulder) x (wrist-elbow) is ANTI-parallel to it
+# (dot = -0.999). One rule, no per-side special-casing.
+def set_bone_orientation(name, ydir, hinge_dir):
+    """local Y along the bone, local X along the joint hinge. No leftover twist."""
+    pb = armature().pose.bones[full(name)]
+    bpy.context.view_layer.update()
+    head = pb.head.copy()
+    y = Vector(ydir).normalized()
+    x = Vector(hinge_dir); x = x - y * x.dot(y)
+    if x.length < 1e-6:
+        x = y.cross(Vector((0,0,1)))
+        if x.length < 1e-6: x = y.cross(Vector((1,0,0)))
+    x.normalize(); z = x.cross(y)
+    pb.matrix = Matrix(((x.x, y.x, z.x, head.x),
+                        (x.y, y.y, z.y, head.y),
+                        (x.z, y.z, z.z, head.z),
+                        (0.0, 0.0, 0.0, 1.0)))
+    bpy.context.view_layer.update()
+
+def limb_ik(b1, b2, target, pole, twist=0.0):
+    """Twist-free 2-bone IK. target/pole are ARMATURE-space points. `pole` is
+    where the elbow/knee should point -- it is what stops the joint flipping.
+    `twist` afterwards rotates b2 about its own axis: for an arm that is real
+    forearm pronation, the only twist a human elbow has."""
+    A = armature()
+    bpy.context.view_layer.update()
+    S  = A.pose.bones[full(b1)].head.copy()
+    l1 = A.pose.bones[full(b1)].length
+    l2 = A.pose.bones[full(b2)].length
+    T  = Vector(target); v = T - S; d = v.length
+    ok = d <= (l1 + l2) * 0.999
+    d  = max(min(d, (l1 + l2) * 0.999), abs(l1 - l2) * 1.001)
+    dirv = v.normalized()
+    a = (l1*l1 - l2*l2 + d*d) / (2.0 * d)
+    h = math.sqrt(max(l1*l1 - a*a, 0.0))
+    pv = Vector(pole) - S
+    pv = pv - dirv * pv.dot(dirv)
+    if pv.length < 1e-6: pv = dirv.cross(Vector((0,1,0)))
+    pv.normalize()
+    E = S + dirv * a + pv * h
+    W = S + dirv * d
+    n = (E - S).cross(W - E)
+    hinge = (-n).normalized() if n.length > 1e-8 else pv
+    set_bone_orientation(b1, E - S, hinge)
+    set_bone_orientation(b2, W - E, hinge)
+    if twist:
+        lrot(b2, "Y", twist); bpy.context.view_layer.update()
+    return ok
+
+def w2a(p): return armature().matrix_world.inverted() @ Vector(p)
+def a2w(p): return armature().matrix_world @ Vector(p)
+
+def arm_ik(side, wrist_world, elbow_hint_world, twist=0.0):
+    return limb_ik("Arm."+side, "ForeArm."+side, w2a(wrist_world), w2a(elbow_hint_world), twist)
+
+def leg_ik(side, ankle_world, knee_hint_world):
+    return limb_ik("UpLeg."+side, "Leg."+side, w2a(ankle_world), w2a(knee_hint_world))
+
+
+# -------------------------------------------------------------- hand shapes ---
+FINGERS = ["Thumb", "Index", "Middle", "Ring", "Pinky"]
+
+def hand_shape(side, curl, spread=None, thumb=None):
+    """curl: (j1,j2,j3) for every finger, or {finger: (j1,j2,j3)}.
+    spread: {finger: degrees} fanning them apart. Unity Humanoid carries finger
+    bones, so this survives retargeting."""
+    for f in FINGERS:
+        c = curl.get(f) if isinstance(curl, dict) else curl
+        if f == "Thumb" and thumb is not None: c = thumb
+        if c is None: continue
+        for j in (1, 2, 3):
+            if c[j-1]: lrot("Hand%s%d.%s" % (f, j, side), "X", c[j-1])
+        if spread and f in spread:
+            lrot("Hand%s1.%s" % (f, side), "Z", spread[f])
+
+OPEN_WATER_HAND = dict(curl={"Index":(22,26,16), "Middle":(18,24,16),
+                             "Ring":(22,30,20),  "Pinky":(28,36,24)},
+                       thumb=(14,10,8),
+                       spread={"Index":7, "Middle":1, "Ring":-6, "Pinky":-13})
+COILED_HAND = dict(curl=(52,78,58), thumb=(18,26,14),
+                   spread={"Index":2, "Middle":0, "Ring":-2, "Pinky":-5})
+GRIP_HAND   = dict(curl={"Index":(39.7, 45.6, 29.7), "Middle":(43.1, 50.9, 33.6),
+                         "Ring":(43.1, 50.7, 33.8),  "Pinky":(39.8, 46.3, 31.1)},
+                   thumb=(42,34,20),
+                   spread={"Index":3, "Middle":0, "Ring":-3, "Pinky":-6})
+# Solved 2026-09-03 against the SLIMMED shaft (34mm dia, was 58mm). Fingers are
+# driven as a set from the middle finger rather than each stopping at first
+# contact -- independent stopping leaves the index and pinky nearly straight.
+SHAFT_RADIUS_ARMUNITS = 7.04
+GRIP_AXIS_HANDLOCAL = ((5.302, 52.088, 9.94), (-0.9706, -0.2326, -0.0627))   # shaft (point, direction) in Hand.R local space
+
+
+# ----------------------------------------------------- animation preview mode ---
+# Yemoja_Scalp and Yemoja_Tattoos each carry a Shrinkwrap BEFORE their Armature
+# modifier, targeting the EVALUATED Yemoja_Body. In rest pose that is correct.
+# Posed, the scalp is still in rest space but is projected onto a body that has
+# moved, so Locs_Generator rebuilds the locs off the wrong surface: MEASURED at
+# -23.1% total loc length on a fight stance (0.00% with the modifier off).
+# Viewport artifact only -- the export applies both in rest pose -- but you
+# cannot judge a pose from a render that is lying.
+_PREVIEW_TARGETS = [("Yemoja_Scalp", "Shrinkwrap")]
+_PREVIEW_HIDE    = ["Yemoja_Tattoos"]
+
+def preview_mode(on=True):
+    changed = []
+    for obj_name, mod_name in _PREVIEW_TARGETS:
+        ob = bpy.data.objects.get(obj_name)
+        if not ob: continue
+        m = ob.modifiers.get(mod_name)
+        if not m: continue
+        m.show_viewport = not on; m.show_render = not on
+        changed.append("%s/%s -> %s" % (obj_name, mod_name, "off" if on else "on"))
+    for nm in _PREVIEW_HIDE:
+        ob = bpy.data.objects.get(nm)
+        if ob:
+            ob.hide_viewport = on; ob.hide_render = on
+            changed.append("%s hidden=%s" % (nm, on))
+    bpy.context.view_layer.update()
+    return changed
+
+
+# ------------------------------------------------------------- measurement ---
+def lowest_world_z(objnames=("Yemoja_Body",)):
+    dg = bpy.context.evaluated_depsgraph_get(); lo = 1e9
+    for nm in objnames:
+        ob = bpy.data.objects.get(nm)
+        if not ob: continue
+        ev = ob.evaluated_get(dg); me = ev.to_mesh(); mw = ev.matrix_world
+        for v in me.vertices:
+            z = (mw @ v.co).z
+            if z < lo: lo = z
+        ev.to_mesh_clear()
+    return lo
+
+def plant_feet(tol=1e-4, max_iter=8):
+    """Drop or lift the Hips until the lowest body vertex sits on world z=0.
+    By measurement, not arithmetic -- the leg chain's effect on height depends
+    on every rotation in it."""
+    for _ in range(max_iter):
+        dz = lowest_world_z()
+        if abs(dz) < tol: break
+        loc("Hips", 0.0, -dz / 0.01, 0.0)      # world Z = 0.01 * armature-space Y
+        bpy.context.view_layer.update()
+    return lowest_world_z()
+
+def bone_world(name, which="tail"):
+    bpy.context.view_layer.update()
+    pb = armature().pose.bones[full(name)]
+    return armature().matrix_world @ (pb.tail if which == "tail" else pb.head)
+
+
+# ------------------------------------------------------- trident (Unity truth) ---
+# The trident is not a Blender asset. In Unity it is a direct child of
+# mixamorig:Hand.R on Assets/Prefabs/Characters/PlayerPrefabs/Yemoja.prefab with
+# a fixed local transform, and an A_Trident capsule collider as its child.
+# Mapping solved from three shared bone positions, max error 0.0016 units:
+#     Unity hand-local (x,y,z) -> Blender hand-local (-x, y, z) * 414.248
+U2B_SCALE = 414.248
+def u2b(v):     return Vector((-v[0]*U2B_SCALE, v[1]*U2B_SCALE, v[2]*U2B_SCALE))
+def u2b_dir(v): return Vector((-v[0], v[1], v[2]))
+
+TRIDENT_U = {
+    # 2026-09-03: was (-0.02168, 0.07914, -0.00303), which gripped 16.8% up the
+    # shaft -- butt at thigh height, planted stance unreachable. Moved to 55.6%.
+    "origin":  Vector((0.72241,-0.05068,-0.02370)),
+    "right":   Vector(( 0.11398, 0.21261, 0.97047)),   # trident local +X (tine spread)
+    "up":      Vector(( 0.21261, 0.94898,-0.23287)),   # trident local +Y (thin axis)
+    "forward": Vector((-0.97047, 0.23287, 0.06296)),   # trident local +Z (the SHAFT)
+}
+TRIDENT_OBJ_SCALE = 100.0      # armature object is scale 0.01, so the prop needs x100
+
+def trident_hand_local_matrix():
+    x = -u2b_dir(TRIDENT_U["right"])     # the X-flip made the basis left-handed;
+    y =  u2b_dir(TRIDENT_U["up"])        # flip one axis back -- tines are
+    z =  u2b_dir(TRIDENT_U["forward"])   # symmetric about that plane
+    t =  u2b(TRIDENT_U["origin"])
+    return Matrix(((x.x, y.x, z.x, t.x), (x.y, y.y, z.y, t.y),
+                   (x.z, y.z, z.z, t.z), (0.0, 0.0, 0.0, 1.0))) @ Matrix.Scale(TRIDENT_OBJ_SCALE, 4)
+
+def trident_local_ends(obj_name="Trident"):
+    ob = bpy.data.objects[obj_name]
+    zs = [v.co.z for v in ob.data.vertices]
+    return Vector((0,0,min(zs))), Vector((0,0,max(zs)))
+
+def trident_ends(obj_name="Trident"):
+    A = armature()
+    W = A.matrix_world @ A.pose.bones[PFX+"Hand.R"].matrix @ trident_hand_local_matrix()
+    b, t = trident_local_ends(obj_name)
+    return W @ b, W @ t
+
+def attach_trident(obj_name="Trident"):
+    ob = bpy.data.objects.get(obj_name)
+    if ob is None: return None
+    A = armature()
+    ob.parent = None; bpy.context.view_layer.update()
+    W = A.matrix_world @ A.pose.bones[PFX+"Hand.R"].matrix @ trident_hand_local_matrix()
+    ob.matrix_world = W; bpy.context.view_layer.update()
+    keep = ob.matrix_world.copy()
+    ob.parent = A; ob.parent_type = "BONE"; ob.parent_bone = PFX + "Hand.R"
+    ob.matrix_parent_inverse = Matrix.Identity(4)
+    bpy.context.view_layer.update()
+    ob.matrix_world = keep; bpy.context.view_layer.update()
+    return ob
+
+def orient_hand_for_shaft(shaft_arm_dir, hand_y_hint_arm):
+    """Rotate Hand.R so the trident's shaft -- a fixed direction in hand-local
+    space, defined by Unity -- points along shaft_arm_dir in armature space.
+    One DOF is left free (spin about the shaft); it is chosen so the back of the
+    hand faces hand_y_hint_arm."""
+    A = armature(); pb = A.pose.bones[PFX+"Hand.R"]
+    bpy.context.view_layer.update()
+    a = u2b_dir(TRIDENT_U["forward"]).normalized()
+    b = Vector(shaft_arm_dir).normalized()
+    R0 = a.rotation_difference(b).to_matrix()
+    y0 = R0 @ Vector((0,1,0)); d = Vector(hand_y_hint_arm)
+    yp = y0 - b*y0.dot(b); dp = d - b*d.dot(b); ang = 0.0
+    if yp.length > 1e-6 and dp.length > 1e-6:
+        yp.normalize(); dp.normalize()
+        ang = math.atan2(yp.cross(dp).dot(b), yp.dot(dp))
+    R = Matrix.Rotation(ang, 3, b) @ R0
+    h = pb.head.copy()
+    pb.matrix = Matrix(((R[0][0],R[0][1],R[0][2],h.x), (R[1][0],R[1][1],R[1][2],h.y),
+                        (R[2][0],R[2][1],R[2][2],h.z), (0.0,0.0,0.0,1.0)))
+    bpy.context.view_layer.update()
+
+
+# ------------------------------------------------------------- keyframing ---
+def get_action(name, fps=30):
+    arm = armature()
+    bpy.context.scene.render.fps = fps
+    if arm.animation_data is None: arm.animation_data_create()
+    act = bpy.data.actions.get(name) or bpy.data.actions.new(name)
+    act.use_fake_user = True
+    arm.animation_data.action = act
+    return act
+
+def key_pose(frame, bones=None):
+    """Key rotation on every humanoid bone plus location on Hips only. Keying
+    the whole set on every extreme keeps the curves aligned -- partial keying is
+    how bones drift between poses in ways nobody can find later."""
+    arm = armature(); bones = bones or humanoid_bones(arm)
+    bpy.context.scene.frame_set(frame)
+    for n in bones:
+        arm.pose.bones[n].keyframe_insert("rotation_quaternion", frame=frame, group=n)
+    arm.pose.bones[PFX+"Hips"].keyframe_insert("location", frame=frame, group=PFX+"Hips")
+
+def set_interpolation(mode="BEZIER", handle="AUTO_CLAMPED"):
+    arm = armature()
+    if not (arm.animation_data and arm.animation_data.action): return
+    for fc in arm.animation_data.action.fcurves:
+        for kp in fc.keyframe_points:
+            kp.interpolation = mode
+            kp.handle_left_type = kp.handle_right_type = handle
+
+
+# ------------------------------------------------------------- review render ---
+REVIEW_DIR = r"C:\Users\steph\Documents\Elementals-Fight\BlenderTools\YemojaDesignArtifacts\anim_review"
+
+def review(tag, cams=("front","side","q34"), silhouette=True, out=None):
+    """Clay + silhouette renders of the current pose. The silhouette pass is not
+    decoration: a pose that does not read as a solid black shape at thumbnail
+    size will not read on a phone mid-fight."""
+    import os
+    out = out or REVIEW_DIR
+    os.makedirs(out, exist_ok=True)
+    sc = bpy.context.scene
+    sav = dict(engine=sc.render.engine, cam=sc.camera, rx=sc.render.resolution_x,
+               ry=sc.render.resolution_y, fp=sc.render.filepath)
+    sh  = sc.display.shading
+    shs = (sh.light, sh.color_type, tuple(sh.single_color), sh.show_cavity)
+    lc  = bpy.context.view_layer.layer_collection.children.get("Yemoja")
+    src = lc.children.get("Yemoja_Source") if lc else None
+    if src: src.exclude = True
+    sc.render.engine = "BLENDER_WORKBENCH"
+    paths = []
+    sh.light="STUDIO"; sh.color_type="SINGLE"; sh.single_color=(0.62,0.63,0.66); sh.show_cavity=True
+    sc.render.resolution_x, sc.render.resolution_y = 800, 1100
+    for n in cams:
+        sc.camera = bpy.data.objects["_AR_"+n]
+        p = os.path.join(out, "%s_%s.png" % (tag, n)); sc.render.filepath = p
+        bpy.ops.render.render(write_still=True); paths.append(p)
+    if silhouette:
+        sh.light="FLAT"; sh.color_type="SINGLE"; sh.single_color=(0,0,0); sh.show_cavity=False
+        sc.render.resolution_x, sc.render.resolution_y = 300, 412
+        for n in cams:
+            sc.camera = bpy.data.objects["_AR_"+n]
+            p = os.path.join(out, "%s_sil_%s.png" % (tag, n)); sc.render.filepath = p
+            bpy.ops.render.render(write_still=True); paths.append(p)
+    sh.light, sh.color_type, sh.single_color, sh.show_cavity = shs
+    if src: src.exclude = False
+    sc.render.engine=sav["engine"]; sc.camera=sav["cam"]
+    sc.render.resolution_x, sc.render.resolution_y = sav["rx"], sav["ry"]
+    sc.render.filepath = sav["fp"]
+    return paths
+
+
+# --------------------------------------------------- capturing a hand-posed grip ---
+# The analytic grip solver gets close but a human eye closes the last gap. Pose the
+# right hand's fingers in the viewport, then call capture_grip() -- it reads the
+# rotations straight off the rig and writes them into this file as CAPTURED_GRIP_R,
+# so the same grip is reused by every clip from then on.
+CAPTURED_GRIP_R = None      # filled in by capture_grip()
+
+def _finger_bones(side="R"):
+    out=[]
+    for f in ("Thumb","Index","Middle","Ring","Pinky"):
+        for j in (1,2,3):
+            n = "%sHand%s%d.%s" % (PFX, f, j, side)
+            if n in armature().pose.bones: out.append(n)
+    return out
+
+def capture_grip(side="R", write=True):
+    """Read the current finger pose and (by default) persist it into this file."""
+    A = armature()
+    data = {}
+    for n in _finger_bones(side):
+        q = A.pose.bones[n].matrix_basis.to_quaternion()
+        data[n] = (round(q.w,6), round(q.x,6), round(q.y,6), round(q.z,6))
+    if write:
+        import re, io
+        p = __file__
+        src = open(p, encoding="utf-8").read()
+        block = "CAPTURED_GRIP_R = " + repr(data)
+        src = re.sub(r"CAPTURED_GRIP_R = .*", block, src, count=1)
+        open(p, "w", encoding="utf-8").write(src)
+    return data
+
+def apply_captured_grip(side="R"):
+    """Re-apply the hand-authored grip. Falls back to the solved GRIP_HAND."""
+    from mathutils import Quaternion
+    A = armature()
+    src = CAPTURED_GRIP_R if side == "R" else None
+    if not src:
+        hand_shape(side, **GRIP_HAND); return False
+    for n, q in src.items():
+        if n in A.pose.bones:
+            A.pose.bones[n].rotation_quaternion = Quaternion(q)
+            A.pose.bones[n].matrix_basis = Quaternion(q).to_matrix().to_4x4()
+    bpy.context.view_layer.update()
+    return True
+
+def setup_for_grip_editing():
+    """Put Blender in the right state to hand-tune the grip: pose mode, only the
+    right-hand finger bones selected, everything else deselected."""
+    A = armature()
+    for ob in bpy.context.selected_objects: ob.select_set(False)
+    A.select_set(True)
+    bpy.context.view_layer.objects.active = A
+    if bpy.context.object.mode != "POSE":
+        bpy.ops.object.mode_set(mode="POSE")
+    # Blender 5.x moved bone selection onto PoseBone, not Bone
+    for pb in A.pose.bones:
+        pb.select = False
+        pb.bone.hide = False
+    names = _finger_bones("R")
+    for n in names:
+        A.pose.bones[n].select = True
+    try:
+        A.data.bones.active = A.data.bones[names[3]]
+    except Exception:
+        pass
+    return names
+
+
+# ---------------------------------------------------- weight smoothing at a joint ---
+# This rig has NO twist bones, so all forearm pronation lands on one joint and the
+# skin folds ("candy wrapper"). The fix is not to move the rotation -- measured, that
+# only relocates the damage -- but to hand the weights over more gradually and to
+# centre the handover ON the joint. Measured on the idle master pose:
+#   ForeArm.L 0.856 -> 0.962,  Arm.L 0.921 -> 0.970,  Hand.L 0.911 -> 0.936
+# Half-widths that won the search: wrist 0.22, elbow 0.18 (in child-bone lengths).
+def smooth_joint_weights(parent, child, half=0.20, objname="Yemoja_Body"):
+    """Redistribute weight between parent and child across a smoothstep ramp
+    centred on the joint. Only these two bones are touched and each vertex's total
+    weight is preserved, so nothing else in the weighting is disturbed."""
+    A = armature(); ob = bpy.data.objects[objname]
+    gn = {g.index: g.name for g in ob.vertex_groups}
+    to_arm = A.matrix_world.inverted() @ ob.matrix_world
+    cb = A.data.bones[full(child)]
+    origin = cb.head_local
+    axis = (cb.tail_local - cb.head_local).normalized()
+    ln = (cb.tail_local - cb.head_local).length
+    gp, gc = ob.vertex_groups[full(parent)], ob.vertex_groups[full(child)]
+    n = 0
+    for v in ob.data.vertices:
+        w = {gn[ge.group]: ge.weight for ge in v.groups if gn[ge.group].startswith(PFX)}
+        tot = w.get(full(parent), 0.0) + w.get(full(child), 0.0)
+        if tot < 0.5: continue
+        s = ((to_arm @ v.co) - origin).dot(axis) / ln
+        t = min(1.0, max(0.0, (s + half) / (2 * half)))
+        f = t * t * (3 - 2 * t)
+        gc.add([v.index], tot * f, "REPLACE")
+        gp.add([v.index], tot * (1.0 - f), "REPLACE")
+        n += 1
+    return n
+
+def normalise_weights(objname="Yemoja_Body", max_influences=4):
+    """Enforce the export rule: at most 4 bone influences per vertex, summing to 1.0.
+    Blender normalises internally at deform time so unnormalised weights look fine
+    here and deform DIFFERENTLY in Unity, which clamps to 4 first."""
+    ob = bpy.data.objects[objname]
+    gn = {g.index: g.name for g in ob.vertex_groups}
+    capped = 0
+    for v in ob.data.vertices:
+        ges = [ge for ge in v.groups if gn[ge.group].startswith(PFX) and ge.weight > 1e-5]
+        if len(ges) > max_influences:
+            ges.sort(key=lambda ge: -ge.weight)
+            for ge in ges[max_influences:]:
+                ob.vertex_groups[gn[ge.group]].remove([v.index])
+            ges = ges[:max_influences]; capped += 1
+        tot = sum(ge.weight for ge in ges)
+        if ges and abs(tot - 1.0) > 1e-4:
+            for ge in ges:
+                ob.vertex_groups[gn[ge.group]].add([v.index], ge.weight / tot, "REPLACE")
+    return capped

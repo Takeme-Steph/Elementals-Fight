@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: #030712;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--p-opacity, 0.7);
+  }
+  90% {
+    opacity: var(--p-opacity, 0.7);
+  }
+  100% {
+    transform: translateY(-110vh) translateX(var(--p-drift, 12px));
+    opacity: 0;
+  }
+}
+
+.particle {
+  position: absolute;
+  bottom: -10px;
+  border-radius: 9999px;
+  will-change: transform, opacity;
+  animation-name: floatUp;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  pointer-events: none;
+}
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinSlowReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.spin-slow {
+  animation: spinSlow 18s linear infinite;
+}
+
+.spin-slow-reverse {
+  animation: spinSlowReverse 24s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin-slow,
+  .spin-slow-reverse,
+  .particle {
+    animation: none !important;
+  }
+}

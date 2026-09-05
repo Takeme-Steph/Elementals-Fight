@@ -1,0 +1,177 @@
+{
+ "ok": true,
+ "log": {
+  "file": "C:\\Users\\steph\\Documents\\Elementals-Fight\\Backups\\Yemoja_WORKING_v115_idleWeights.blend",
+  "candidate": "A3",
+  "author": {
+   "skip_right": true,
+   "budget": {
+    "shoulder": 40.0,
+    "elbow": 60.0,
+    "wrist": 35.0
+   },
+   "candidate": "A3",
+   "name": "Offering, hinged",
+   "note": "A2 rebuilt on the hinge-correct solver: the elbow now folds in its own anatomical plane, flexion 100 deg, and the shoulder band comes back to 1.00.",
+   "U": 94.759,
+   "F": 78.649,
+   "arms": {
+    "L": {
+     "side": "L",
+     "shoulder": [
+      49.77,
+      572.6,
+      -43.28
+     ],
+     "elbow": [
+      86.13,
+      486.04,
+      -56.15
+     ],
+     "wrist": [
+      85.63,
+      488.94,
+      22.44
+     ],
+     "wrist_error": 0.0004,
+     "reach_needed": 112.27,
+     "reach_max": 173.41,
+     "reach_frac": 0.6474,
+     "elbow_included_deg": 80.1,
+     "forearm_dir": [
+      -0.006,
+      0.037,
+      0.999
+     ],
+     "finger_dir": [
+      0.0,
+      -0.0,
+      1.0
+     ],
+     "palm_normal": [
+      0.799,
+      0.602,
+      -0.0
+     ],
+     "palm_up_deg": 53.0,
+     "wrist_dev_deg": 2.1,
+     "hand_axis_dev_deg": 9.8,
+     "pole_phi_deg": 0.0,
+     "elbow_from_shoulder_U": [
+      0.384,
+      -0.913,
+      -0.136
+     ]
+    }
+   },
+   "clavicles": {
+    "L": {
+     "side": "L",
+     "target_d_elev": -5.6,
+     "target_d_prot": 10.0,
+     "got_d_elev": -5.61,
+     "got_d_prot": 10.01,
+     "rest_elev": -23.67,
+     "pose_elev": -29.27,
+     "axial_roll_deg": 0.0,
+     "shoulder_twist_deg": 35.02
+    }
+   },
+   "twist": {
+    "L": {
+     "side": "L",
+     "arm_to_hand_deg": 151.72,
+     "shoulder_deg": 35.02,
+     "elbow_deg": 60.0,
+     "wrist_deg": 91.72,
+     "clavicle_to_hand_deg": 186.74,
+     "worst_joint_load": 2.621,
+     "in_budget": false,
+     "pole_phi_deg": 0.0,
+     "budget": {
+      "shoulder": 40.0,
+      "elbow": 60.0,
+      "wrist": 35.0
+     },
+     "pole_sweep": [
+      {
+       "phi": 0.0,
+       "shoulder": 35.0,
+       "arm_to_hand": 151.7,
+       "load": 2.621
+      }
+     ]
+    }
+   },
+   "trident": {
+    "butt_world": [
+     -2.1119,
+     1.6067,
+     0.0
+    ],
+    "tip_world": [
+     -2.7038,
+     -0.0724,
+     7.8952
+    ],
+    "butt_z": 0.0,
+    "shaft_off_vertical_deg": 12.708,
+    "butt_z_unchanged": 0.0,
+    "plant_iterations": []
+   },
+   "feet": {
+    "lowest_world_z": 0.000692,
+    "base_lowest_world_z": 0.000692,
+    "delta": 0.0
+   },
+   "head_turn_deg": 0.0
+  },
+  "master_keyed": true,
+  "loop_twist_targets": {
+   "L": 60.0,
+   "R": 55.334
+  },
+  "verify": {
+   "seam": {
+    "max_quat_delta": 4.5701222006755415e-06,
+    "worst_bone": "ForeArm.R",
+    "hips_loc_delta": 0.0
+   },
+   "feet": {
+    "Foot.L_pos_drift": 0.000509,
+    "Foot.L_ori_drift_deg": 0.0,
+    "Foot.R_pos_drift": 0.000243,
+    "Foot.R_ori_drift_deg": 0.0,
+    "Foot.L_pos_drift_armunits": 0.0509,
+    "Foot.R_pos_drift_armunits": 0.0243
+   },
+   "floor": {
+    "frame1": 0.00106097,
+    "min": -0.00040769,
+    "max": 0.00177908,
+    "max_abs_dev_from_frame1": 0.00146866
+   },
+   "hand": {
+    "HandR_pos_drift": 0.00112,
+    "HandR_ori_drift_deg": 0.0,
+    "HandL_travel": 0.19271,
+    "HandR_pos_drift_armunits": 0.112,
+    "HandL_travel_armunits": 19.271
+   },
+   "twist_dev": {
+    "L_elbow": 0.0001,
+    "R_elbow": 0.0004,
+    "L_wrist_range": [
+     91.566,
+     91.908
+    ],
+    "R_wrist_range": [
+     -22.169,
+     -10.897
+    ]
+   }
+  },
+  "n_keyed_bones": 57
+ },
+ "stamp": "A3"
+}
