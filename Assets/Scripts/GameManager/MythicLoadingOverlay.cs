@@ -555,7 +555,13 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
                 Vector2 point = new Vector2(x, y);
                 float t = lengthSquared > 0f ? Mathf.Clamp01(Vector2.Dot(point - a, segment) / lengthSquared) : 0f;
                 float distance = Vector2.Distance(point, a + segment * t);
-                float alpha = 1f - Mathf.SmoothStep(1.2f, 2.8f, distance);
+                // SmoothStep's third argument is already a normalized interpolation
+                // value; passing raw pixel distance here previously returned values
+                // above 1 and made every stroke's final alpha zero/negative. Normalize
+                // the 1.2-2.8px antialias band explicitly so rune centres are opaque
+                // and their outer edge fades cleanly to transparent.
+                float edge = Mathf.Clamp01((2.8f - distance) / 1.6f);
+                float alpha = edge * edge * (3f - 2f * edge);
                 int pixelIndex = y * atlasWidth + xOffset + x;
                 if (alpha > pixels[pixelIndex].a)
                 {
