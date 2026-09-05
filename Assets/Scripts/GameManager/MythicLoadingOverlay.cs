@@ -52,6 +52,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private readonly List<Image> unlitRuneImages = new();
     private readonly List<Image> glowingRuneImages = new();
     private readonly List<UiSpark> tipSparks = new();
+    private readonly List<TMP_Text> playerNameTexts = new();
 
     private ArenaDefinition arena;
     private Color accent;
@@ -62,6 +63,12 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private Image flash;
     private TMP_Text progressText;
     private TMP_Text loreText;
+    private TMP_Text syncText;
+    private TMP_Text stageText;
+    private TMP_Text versusText;
+    private RectTransform safeZoneRect;
+    private RectTransform matchupRect;
+    private RectTransform loreTickerRect;
     private RectTransform loadingBarRect;
     private RectTransform beamTip;
     private RectTransform glowingRuneClip;
@@ -85,6 +92,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private int loreIndex;
     private bool runesInitialized;
     private float sparkEmissionBudget;
+    private Vector2 lastResponsiveSize = new Vector2(-1f, -1f);
 
     /// <summary>Creates the gateway and begins loading the supplied scene immediately.</summary>
     public static void Begin(string sceneName, ArenaDefinition selectedArena, int playerIndex, int opponentIndex)
@@ -180,6 +188,9 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         Canvas canvas = CreateUi<Canvas>("GatewayCanvas", transform);
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = short.MaxValue;
+        // This interface relies on sub-pixel gradient and glow motion. Pixel-perfect
+        // snapping is intended for pixel art and makes these slow animations jitter.
+        canvas.pixelPerfect = false;
         CanvasScaler scaler = canvas.gameObject.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920f, 1080f);
@@ -226,31 +237,33 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             starSpeeds.Add(Random.Range(6f, 23f));
         }
 
-        RectTransform safeZone = CreateRect("SafeZoneContainer", canvas.transform);
-        safeZone.gameObject.AddComponent<SafeAreaContainer>();
+        safeZoneRect = CreateRect("SafeZoneContainer", canvas.transform);
+        safeZoneRect.gameObject.AddComponent<SafeAreaContainer>();
 
-        CreateTopAnchors(safeZone);
-        CreateMatchup(safeZone, playerIndex, opponentIndex);
-        CreateLowerDecoder(safeZone);
+        CreateTopAnchors(safeZoneRect);
+        CreateMatchup(safeZoneRect, playerIndex, opponentIndex);
+        CreateLowerDecoder(safeZoneRect);
         CreateWarpFlash(canvas.transform);
         ShuffleRunes();
         loreText.text = FormatLore(LoreLines[0]);
+        Canvas.ForceUpdateCanvases();
+        ApplyResponsiveLayout(true);
         nextLoreSwap = Time.unscaledTime + LorePeriod;
         StartCoroutine(WarpIn());
     }
 
     private void CreateTopAnchors(Transform parent)
     {
-        TMP_Text sync = CreateText("TopLeft_StatusText", parent, "[ SYNCHRONIZING BOUNDARIES ]", 28, FontStyles.Normal, new Color(0.94f, 0.98f, 1f), technicalFont);
-        Pin(sync.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(520f, 48f), new Vector2(50f, -50f));
-        sync.alignment = TextAlignmentOptions.Left;
-        sync.characterSpacing = 3.5f;
-        AddTextShadow(sync, 0.82f, new Vector2(2f, -2f));
-        TMP_Text stage = CreateText("TopRight_StageText", parent, $"[ STAGE: {(arena != null ? arena.DisplayName : "MYTHIC GATEWAY").ToUpperInvariant()} ]", 28, FontStyles.Normal, new Color(0.94f, 0.98f, 1f), technicalFont);
-        Pin(stage.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(520f, 48f), new Vector2(-50f, -50f));
-        stage.alignment = TextAlignmentOptions.Right;
-        stage.characterSpacing = 3.5f;
-        AddTextShadow(stage, 0.82f, new Vector2(2f, -2f));
+        syncText = CreateText("TopLeft_StatusText", parent, "[ SYNCHRONIZING BOUNDARIES ]", 28, FontStyles.Normal, new Color(0.94f, 0.98f, 1f), technicalFont);
+        Pin(syncText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(520f, 48f), new Vector2(50f, -50f));
+        syncText.alignment = TextAlignmentOptions.Left;
+        syncText.characterSpacing = 3.5f;
+        AddTextShadow(syncText, 0.82f, new Vector2(2f, -2f));
+        stageText = CreateText("TopRight_StageText", parent, $"[ STAGE: {(arena != null ? arena.DisplayName : "MYTHIC GATEWAY").ToUpperInvariant()} ]", 28, FontStyles.Normal, new Color(0.94f, 0.98f, 1f), technicalFont);
+        Pin(stageText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(520f, 48f), new Vector2(-50f, -50f));
+        stageText.alignment = TextAlignmentOptions.Right;
+        stageText.characterSpacing = 3.5f;
+        AddTextShadow(stageText, 0.82f, new Vector2(2f, -2f));
     }
 
     private void CreateMatchup(Transform parent, int playerIndex, int opponentIndex)
@@ -258,17 +271,17 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         FighterStyle p1 = hasCachedMatchup ? cachedPlayer : GetFallbackFighterStyle(playerIndex);
         FighterStyle p2 = hasCachedMatchup ? cachedOpponent : GetFallbackFighterStyle(opponentIndex);
 
-        RectTransform matchup = CreateRect("MatchupContainer", parent);
-        Pin(matchup, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(860f, 410f), Vector2.zero);
+        matchupRect = CreateRect("MatchupContainer", parent);
+        Pin(matchupRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(860f, 410f), Vector2.zero);
 
-        CreatePlayerPanel(matchup, "P1_Panel", p1, false);
-        CreatePlayerPanel(matchup, "P2_Panel", p2, true);
+        CreatePlayerPanel(matchupRect, "P1_Panel", p1, false);
+        CreatePlayerPanel(matchupRect, "P2_Panel", p2, true);
 
-        TMP_Text versus = CreateText("VS_Text", matchup, "(vs)", 52, FontStyles.Normal, new Color(1f, 0.84f, 0.48f), displayFont);
-        Pin(versus.rectTransform, new Vector2(0.5f, 0.57f), new Vector2(0.5f, 0.5f), new Vector2(120f, 72f), Vector2.zero);
-        versus.alignment = TextAlignmentOptions.Center;
-        versus.characterSpacing = 1.5f;
-        AddTextShadow(versus, 0.92f, new Vector2(3f, -3f));
+        versusText = CreateText("VS_Text", matchupRect, "(vs)", 52, FontStyles.Normal, new Color(1f, 0.84f, 0.48f), displayFont);
+        Pin(versusText.rectTransform, new Vector2(0.5f, 0.57f), new Vector2(0.5f, 0.5f), new Vector2(120f, 72f), Vector2.zero);
+        versusText.alignment = TextAlignmentOptions.Center;
+        versusText.characterSpacing = 1.5f;
+        AddTextShadow(versusText, 0.92f, new Vector2(3f, -3f));
     }
 
     private void CreatePlayerPanel(Transform matchup, string panelName, FighterStyle fighter, bool right)
@@ -303,12 +316,14 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         label.color = new Color(1f, 0.82f, 0.42f);
         label.characterSpacing = 1f;
         AddTextShadow(label, 0.94f, new Vector2(3f, -3f));
+        playerNameTexts.Add(label);
     }
 
     private void CreateLowerDecoder(Transform parent)
     {
         Image ticker = CreateImage("LoreTicker", parent, new Color(0.01f, 0.025f, 0.05f, 0.72f));
-        Pin(ticker.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(1560f, 66f), new Vector2(50f, 150f));
+        loreTickerRect = ticker.rectTransform;
+        Pin(loreTickerRect, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(1560f, 66f), new Vector2(50f, 150f));
         loreText = CreateText("BottomLeft_LoreText", parent, string.Empty, 26, FontStyles.Normal, new Color(0.94f, 0.98f, 1f), technicalFont);
         Pin(loreText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(1560f, 66f), new Vector2(50f, 150f));
         loreText.alignment = TextAlignmentOptions.Left;
@@ -433,6 +448,8 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             return;
         }
 
+        ApplyResponsiveLayout(false);
+
         float t = Time.unscaledTime;
         panorama.anchoredPosition = new Vector2(Mathf.Sin(t * 0.16f) * 22f, Mathf.Cos(t * 0.11f) * 8f);
         panorama.localScale = Vector3.one * (1.04f + Mathf.Sin(t * 0.13f) * 0.018f);
@@ -492,6 +509,113 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             loreText.text = FormatLore(LoreLines[loreIndex]);
             nextLoreSwap = Time.unscaledTime + LorePeriod;
         }
+    }
+
+    private void ApplyResponsiveLayout(bool force)
+    {
+        if (safeZoneRect == null || loadingBarRect == null)
+        {
+            return;
+        }
+
+        Vector2 safeSize = safeZoneRect.rect.size;
+        if (safeSize.x <= 0f || safeSize.y <= 0f || (!force && Vector2.SqrMagnitude(safeSize - lastResponsiveSize) < 0.25f))
+        {
+            return;
+        }
+        lastResponsiveSize = safeSize;
+
+        // CanvasScaler's 0.5 width/height match intentionally produces a shorter
+        // reference-space canvas on 19.5:9 and 21:9 displays. Scale only the dense
+        // centre composition; edge content remains anchored to the safe area.
+        float heightFactor = Mathf.InverseLerp(880f, 1080f, safeSize.y);
+        float sidePadding = Mathf.Clamp(safeSize.x * 0.026f, 32f, 58f);
+        float topPadding = Mathf.Lerp(34f, 50f, heightFactor);
+        float topWidth = Mathf.Min(620f, Mathf.Max(360f, (safeSize.x - sidePadding * 2f) * 0.46f));
+
+        ConfigureTopTag(syncText, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(sidePadding, -topPadding), topWidth);
+        ConfigureTopTag(stageText, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-sidePadding, -topPadding), topWidth);
+
+        if (matchupRect != null)
+        {
+            float matchupScale = Mathf.Lerp(0.84f, 1f, heightFactor);
+            matchupRect.localScale = Vector3.one * matchupScale;
+            matchupRect.anchoredPosition = new Vector2(0f, Mathf.Lerp(28f, 0f, heightFactor));
+        }
+        if (versusText != null)
+        {
+            versusText.enableAutoSizing = true;
+            versusText.fontSizeMin = 40f;
+            versusText.fontSizeMax = 52f;
+        }
+        for (int i = 0; i < playerNameTexts.Count; i++)
+        {
+            playerNameTexts[i].fontSizeMin = Mathf.Lerp(24f, 28f, heightFactor);
+            playerNameTexts[i].fontSizeMax = Mathf.Lerp(34f, 38f, heightFactor);
+        }
+
+        float bottomPadding = Mathf.Lerp(34f, 50f, heightFactor);
+        float railHeight = Mathf.Lerp(52f, 58f, heightFactor);
+        SetBottomStretch(loadingBarRect, sidePadding, bottomPadding, railHeight);
+
+        float loreHeight = Mathf.Lerp(56f, 66f, heightFactor);
+        float loreBottom = bottomPadding + railHeight + Mathf.Lerp(14f, 18f, heightFactor);
+        SetBottomStretch(loreTickerRect, sidePadding, loreBottom, loreHeight);
+        SetBottomStretch(loreText.rectTransform, sidePadding, loreBottom, loreHeight);
+        loreText.enableAutoSizing = true;
+        loreText.fontSizeMin = 18f;
+        loreText.fontSizeMax = Mathf.Lerp(23f, 26f, heightFactor);
+        loreText.overflowMode = TextOverflowModes.Ellipsis;
+
+        progressText.enableAutoSizing = true;
+        progressText.fontSizeMin = 22f;
+        progressText.fontSizeMax = Mathf.Lerp(27f, 30f, heightFactor);
+        if (beamTip != null)
+        {
+            beamTip.sizeDelta = new Vector2(5f, Mathf.Lerp(29f, 34f, heightFactor));
+        }
+
+        float railWidth = Mathf.Max(0f, safeSize.x - sidePadding * 2f);
+        float runeWidth = Mathf.Clamp((railWidth * (RuneProgressWidth - RuneProgressStart) / RuneCount) * 0.62f, 22f, 28f);
+        float runeHeight = Mathf.Lerp(29f, 34f, heightFactor);
+        ResizeRunes(unlitRuneImages, runeWidth, runeHeight);
+        ResizeRunes(glowingRuneImages, runeWidth, runeHeight);
+    }
+
+    private static void ConfigureTopTag(TMP_Text text, Vector2 anchor, Vector2 pivot, Vector2 position, float width)
+    {
+        if (text == null)
+        {
+            return;
+        }
+
+        Pin(text.rectTransform, anchor, pivot, new Vector2(width, 48f), position);
+        text.enableAutoSizing = true;
+        text.fontSizeMin = 18f;
+        text.fontSizeMax = 28f;
+        text.overflowMode = TextOverflowModes.Ellipsis;
+    }
+
+    private static void ResizeRunes(List<Image> runes, float width, float height)
+    {
+        for (int i = 0; i < runes.Count; i++)
+        {
+            runes[i].rectTransform.sizeDelta = new Vector2(width, height);
+        }
+    }
+
+    private static void SetBottomStretch(RectTransform rect, float horizontalPadding, float bottom, float height)
+    {
+        if (rect == null)
+        {
+            return;
+        }
+
+        rect.anchorMin = new Vector2(0f, 0f);
+        rect.anchorMax = new Vector2(1f, 0f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.offsetMin = new Vector2(horizontalPadding, bottom);
+        rect.offsetMax = new Vector2(-horizontalPadding, bottom + height);
     }
 
     private void ShuffleRunes()
@@ -759,7 +883,9 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
 
     private static Sprite CreateCircleSprite()
     {
-        const int size = 128;
+        // The medallions render at 250 reference pixels. A matching source density
+        // prevents bilinear upscaling from softening their circular silhouette.
+        const int size = 256;
         Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
         texture.name = "RuntimeGatewayCircle";
         texture.filterMode = FilterMode.Bilinear;
