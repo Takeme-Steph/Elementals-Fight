@@ -781,4 +781,84 @@ Playtest (tap each tab, warp/backdrop/header/badge/particle changes, CONFIRM int
 **Relevant files:** `Assets/Scripts/GameManager/LoadArena.cs` (new), `Assets/Scripts/GameManager/SceneHandler.cs`, `Assets/Scenes/FightScene.unity`, `Assets/Scripts/CharacterSelect/CharacterSelectController.cs`, `Assets/Editor/CharacterSelect/CharacterSelectSceneBuilder.cs`, `Assets/Data/Arenas/ArenaRoster.asset`.
 
 ---
+### [!] Adopt 1 Unity unit = 1 metre as the project scale standard - SPLIT TASK, read the ownership split before starting
+**Why:** Stephanie, 2026-09-05: *"what is the standard scale to use for characters in a mobile fighting game? the old scale was due to placeholder models, but since we are doing our own art work now, we can set the standards ourselves."*
+
+There is no genre-specific answer. The standard is Unity's own - **1 unit = 1 metre** - and it is not a tidiness convention, it is baked into engine defaults: gravity -9.81 m/s2, `defaultContactOffset` 0.01 (1 cm), `bounceThreshold` 2 m/s, Rigidbody mass in kg, URP light range/attenuation, shadow and normal bias, NavMesh agent radius 0.5 / height 2.0, and every third-party asset and tutorial value you will ever paste in.
+
+Measured current state: `Physics.gravity` is **(0, -20, 0)**, Yemoja's imported mesh is **1.80 units** tall and her prefab root scale is **1.91667**, giving **3.45 units** in world. Ninja and WarriorPrincess sit at 1.81320, the Display prefabs at ~1.871, EarthMage at 1.0 but authored ~3.3 units tall. So the project is internally consistent at roughly **2 units per metre**, and gravity is doubled (-20 vs -9.81, ratio 2.04) to compensate. **Nothing is broken.** The cost is that every engine default and every borrowed number is 2x wrong for this project, and that grows more expensive with each stage, VFX and camera rig added.
+
+Yemoja is already most of the way there: her importer produces exactly 1.80 units, so dropping her root to 1.0 makes her a 1.80 m character with no re-authoring.
+
+**Architectural rule this task establishes:** normalise character height in the **Model Importer's scale factor**, never at the prefab root. A non-1.0 root multiplies through the whole hierarchy - colliders behave badly under scaled transforms, particle systems need their scaling mode matched, every child offset lives in a scaled space, and humanoid root motion is happiest at 1.0. Normalising at import keeps every character prefab at 1.0 regardless of how big its source model happens to be, which also absorbs EarthMage being authored ~3.3 units tall while Ninja needs 1.81x.
+
+**BLOCKED ON A DECISION FROM STEPHANIE:** the target real-world height per character. Recommendation: Yemoja **1.80 m** (matches the Blender pipeline's existing 1.80 target exactly); Ninja / WarriorPrincess / EarthMage are placeholders so their absolute heights matter less - set them plausibly relative to her, e.g. 1.75 / 1.70 / 1.85. Do not start until she confirms.
+
+---
+
+#### OWNERSHIP SPLIT - this is why the task is marked SPLIT
+
+**Claude Code CAN do these (plain text files, scripts, git). This is the whole of Claude Code's part:**
+1. `ProjectSettings/DynamicsManager.asset` - `m_Gravity: {x: 0, y: -20, z: 0}` becomes `y: -9.81`. This is project-settings YAML, **not** scene or prefab YAML, so it is safe to edit directly.
+2. Update the `[SerializeField]` **defaults** in code so newly-added components are metric from now on. **The numbers below are PROVISIONAL arithmetic, not measurements** - use whatever Cowork actually measured and landed on the prefabs (see ORDERING below), so that for the first time the script defaults and the prefab values agree: `PlayerController.cs:6` `playerMoveSpeed = 7f` -> `3.5f`; `PlayerController.cs:7` `playerJumpForce = 200f` -> `100f`; `PlayerAutoPilot.cs:10-14` `moveSpeed = 6f` -> `3f`, `jumpForce = 20f` -> `10f`, `attackRange = 2.5f` -> `1.25f`; `PlayerManager.cs:24` `knockbackForce = 8f` -> `4f`; `CharacterPhysics.cs:12` `rayDistance = 0.3f` -> `0.15f`.
+   **Important and easy to get wrong:** changing these defaults does **NOT** change the existing prefabs. Every `[SerializeField]` value is already baked into each prefab's YAML - proof: the script default for `playerJumpForce` is 200 while `Yemoja.prefab` actually holds 35. This step only keeps future components honest; the live values are Cowork's step 7 below.
+3. `Assets/Scripts/CharacterSelect/DeityStage.cs:106` hard-codes `instance.transform.localScale = new Vector3(1f, 1.7f, 1f)` - a **non-uniform** scale applied to CharacterSelect models. Non-uniform scaling on a skinned character is a bug magnet regardless of this task. Replace with `Vector3.one` and confirm the CharacterSelect stage still frames correctly (a framing fix, if needed, belongs in `DeityStage`'s camera/offset fields, not in a stretched transform).
+4. Branch, commit, and leave unpushed as usual.
+
+**Claude Code CANNOT do these - they are in-Editor work and belong to Cowork (Claude AI) over the MCP connection:**
+5. Measuring each character model's real mesh height (needs vertex data out of the Editor).
+6. Setting each FBX's `ModelImporter.globalScale` so it imports at its target height.
+7. Setting every character prefab root scale to **1.0**, and re-tuning the live serialized values **on the prefabs** (`playerMoveSpeed`, `playerJumpForce`, `moveSpeed`, `jumpForce`, `attackRange`, `knockbackForce`, `rayDistance`). These live in prefab YAML, which `CLAUDE.md` puts on the do-not-touch-without-asking list, and `SerializedObject` in the Editor is the safe way to change them.
+8. Resizing the root `BoxCollider`s (also prefab YAML, and Yemoja's still dates from pre-resculpt proportions).
+9. Setting `CharacterPhysics.groundLayerMask`, which is still **0** (nothing) on Yemoja.
+10. Stage geometry and camera distances in `FightScene.unity` (scene YAML - same do-not-touch rule).
+11. Verification by measurement: character height in metres, jump apex height, walk speed, and foot clearance via the CharacterImport scene's live readout.
+
+**ORDERING - COWORK RUNS FIRST. This corrects an earlier version of this entry which had it the other way round.**
+
+Sequence: Stephanie confirms target heights -> **Cowork does 5-11** live in the Editor on the working tree -> Cowork writes its measured final values into this entry -> **Claude Code does 1-4**, transcribing those measured values rather than the provisional ones -> Claude Code reviews the whole diff, branches, commits.
+
+Three reasons Cowork has to be first, in order of how much they matter:
+1. **Claude Code's step 2 depends on numbers that do not exist yet.** The provisional halvings below are arithmetic, not measurements. The real values come out of tuning jump apex and walk speed in metres in the Editor. If Claude Code writes 3.5f into the script while Cowork lands 3.2f on the prefab, the defaults and the prefabs disagree - which is the exact confusion that already exists in this codebase (`playerJumpForce` default 200 vs prefab 35). Doing it in this order finally makes them agree.
+2. **Halving gravity before the prefab speeds are halved leaves the game visibly broken.** Whoever goes second closes that window; the shorter it is open, the better, and Cowork's half is the larger one.
+3. **Git handles it fine.** Uncommitted working-tree changes carry across `git checkout -b`, so Claude Code branching *after* Cowork's Editor work still puts everything on the feature branch and off `main`. This is already the established pattern in this project - see the dual-control/floor-sink entry above, where Cowork made the live Editor changes and Claude Code reviewed the diff and committed on a branch.
+
+**Acceptance criteria:**
+- Every character prefab root scale is exactly 1.0, and every character's in-world height matches its agreed target in metres, measured from mesh vertices and not eyeballed.
+- `Physics.gravity` is -9.81, or a higher value that is **deliberately** chosen for jump feel and recorded here as such - high gravity is a legitimate fighting-game choice, but it must be a decision made against a metric baseline rather than a leftover scale artifact.
+- Jump apex is verified against a target height **in metres**. Note: if jump is a Rigidbody impulse, velocity is force / mass, so halving force only halves the jump if mass is unchanged - tune to measured apex, not to arithmetic.
+- Walk speed measured in m/s matches intent.
+- No character prefab, and no CharacterSelect display model, carries a non-uniform scale.
+- The 12 hitbox markers and the trident still sit correctly on Yemoja - a uniform root change should preserve their local offsets, so this is a confirmation, not a re-derivation.
+
+**Relevant files:** `ProjectSettings/DynamicsManager.asset`, `Assets/Scripts/PlayerCTRLs/PlayerController.cs`, `PlayerAutoPilot.cs`, `PlayerManager.cs`, `CharacterPhysics.cs`, `Assets/Scripts/CharacterSelect/DeityStage.cs`, all prefabs under `Assets/Prefabs/Characters/`, all character FBX `.meta` files, `Assets/Scenes/FightScene.unity`, `claude/character-scale-standard.md` (full reasoning and the measured table).
+
+---
+### [ ] Mixamo placeholder clips sink Yemoja's feet through the floor - separate bug from the idle warping, still open
+**Why:** While diagnosing the custom idle's retarget warping (fixed, see `claude/yemoja-idle-retarget-fix.md`), toe-bone floor clearance was measured across clips on Yemoja. Her own `Yemoja@Idle` never goes below the floor: **+0.0401 to +0.0713** world units. The Mixamo placeholders do, badly and constantly:
+
+| clip | toe clearance (world units) |
+|---|---|
+| `Yemoja@Idle` (hers) | **+0.0401 .. +0.0713** |
+| `SwordAndShieldIdle` | **-0.1585 .. -0.0905** |
+| `SwordAndShieldAttack` | -0.2814 .. +0.2149 |
+| `SwordAndShieldSlash` | -0.3004 .. +1.1032 |
+
+`SwordAndShieldIdle` has her feet roughly 4-8 cm underground through **every frame** of the clip. That is almost certainly what Stephanie has been reading as the animations "never landing well" on the placeholders - and it is a *different* fault from the rest-pose mismatch that warped her custom idle, even though the two look similar in motion.
+
+Checked and ruled out: the Mixamo clips are **not** badly retargeted in terms of joint angles. Sampling `SwordAndShieldIdle` on all three characters gives elbowL 13.4 / 12.7 / 9.3 deg and kneeR 18.2 / 15.9 / 15.9 deg on Yemoja / Ninja / WarriorPrincess - Yemoja is within a few degrees of the others on everything except thigh elevation (~10 deg out), which is consistent with genuinely different leg proportions. So the pose is broadly right and the whole body is simply sitting too low.
+
+Known likely cause, from `claude/yemoja-v6-import-record.md`: the `Armature` object's Y translation (0.034578 source units) is honoured in the bind pose but **discarded** under Humanoid retargeting, because Unity rebuilds the root from the avatar's hips/feet relationship. Two candidate fixes were identified there and neither was applied because both change gameplay-visible foot placement:
+- **Unity side (quick):** set `heightOffset` per clip to lift each one. Must be re-applied to every future clip.
+- **Blender side (structural):** zero the Armature translation and bake it into the mesh, so rest and retargeted poses agree.
+
+**Do not start without Stephanie's call on which route.** Also note the fix may be per-clip rather than one constant - the range differs a lot between clips, so measure each rather than applying one offset blind.
+
+**Acceptance criteria:**
+- Toe clearance never negative across every frame of all 8 placeholder clips, measured off the toe bones (not renderer bounds - `SkinnedMeshRenderer.bounds` is a cached generous volume and useless for this).
+- Her own `Yemoja@Idle` is unchanged by whatever fix is applied - it is already correct.
+
+**Relevant files:** `Assets/Animations/YemojaAnimations/*.fbx` (8 placeholders), `claude/yemoja-v6-import-record.md`, `claude/yemoja-idle-retarget-fix.md`, `Assets/Scenes/CharacterImport.unity` (has a live foot-clearance readout).
+
+---
 *Bring the next feature or bug to Claude AI (Cowork) and it'll be broken down into tasks here.*

@@ -183,11 +183,19 @@ public class CharacterPreview : MonoBehaviour
             string file = string.IsNullOrEmpty(path) ? "" : System.IO.Path.GetFileNameWithoutExtension(path);
             string label;
             if (string.IsNullOrEmpty(file)) label = c.name;
-            else if (perFile[path] > 1) label = file + " / " + c.name;
-            else label = file;
+            else if (perFile[path] > 1) label = Pretty(file) + " / " + c.name;
+            else label = Pretty(file);
             _clips.Add(new Entry { clip = c, label = label });
         }
         _clips.Sort((a, b) => string.Compare(a.label, b.label, System.StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Unity's clip-association convention names an animation file <Model>@<Clip>.fbx, and the
+    // '@' is load-bearing - it is what ties the clip to Yemoja.fbx for previews. So keep the
+    // file name as-is on disk and only prettify it for display: "Yemoja@Idle" -> "Yemoja Idle".
+    static string Pretty(string fileName)
+    {
+        return string.IsNullOrEmpty(fileName) ? fileName : fileName.Replace('@', ' ');
     }
 
     static void AddClipsFromAsset(string path, HashSet<AnimationClip> seen, List<AnimationClip> into)
