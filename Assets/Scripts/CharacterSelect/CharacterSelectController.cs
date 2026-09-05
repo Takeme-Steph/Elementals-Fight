@@ -350,6 +350,19 @@ public class CharacterSelectController : MonoBehaviour
         }
         else
         {
+            CharacterDefinition selectedPlayer = roster.Get(playerIndex);
+            CharacterDefinition selectedOpponent = roster.Get(CurrentIndex);
+
+            // ArenaSelect has no CharacterRoster dependency by design. Preserve the
+            // confirmed definitions for its loading gateway before this scene unloads,
+            // so the next screen can present any future fighter without index-based UI
+            // styling or another duplicate roster reference.
+            MythicLoadingOverlay.CacheMatchup(selectedPlayer, selectedOpponent);
+
+            // Keep the authoritative roster objects for FightScene too. Its serialized
+            // roster field is awaiting the separate in-Editor migration, but this path
+            // must never discard a just-confirmed roster selection for charPrefabs[].
+            MatchSelection.Set(selectedPlayer, selectedOpponent);
             PlayerPrefs.SetInt("selectedCharacter", playerIndex);
             PlayerPrefs.SetInt("selectedOpponent", CurrentIndex);
             PlayerPrefs.Save();

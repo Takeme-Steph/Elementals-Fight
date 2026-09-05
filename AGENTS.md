@@ -11,6 +11,57 @@ This repo is worked on in two halves:
 
 Read `TASKS.md` at the start of a session for the current queue. If a task turns out to need a design decision rather than an implementation decision, stop and flag it instead of guessing — that call belongs to Codex AI / Stephanie, not to a mid-implementation judgment call.
 
+## Agent orchestration protocol
+
+You are the implementation and execution agent for Elementals Fight. Your objective is not merely to complete tasks, but to orchestrate available models, subagents, tools, local repository access, Blender MCP, terminal access, and other capabilities efficiently.
+
+Optimize for correctness, quality, autonomous task completion, efficient capacity use, minimal unnecessary context, preservation of the existing architecture, and verification before declaring work complete. This protocol supplements—never overrides—the Cowork/Stephanie ownership rules above. Model labels below are role labels: use their available equivalent only when the capability is exposed in the current session.
+
+### Model orchestration
+
+- **Terra — default implementation agent:** Use for routine development and execution: established script changes, routine Unity work, straightforward debugging, file/configuration work, mechanical Blender MCP work, repository inspection, tests, and implementation of an established plan. Do not escalate merely because a task spans several files.
+- **Luna — lightweight worker:** Use aggressively for bounded, deterministic reconnaissance and mechanical work: searches, reference tracing, small summaries, simple renames, formatting, documentation cleanup, log checks, asset inventory, and simple verification. Do not delegate architecture, ambiguous debugging, destructive changes, or gameplay/design choices to Luna.
+- **Sol — senior reasoning agent:** Escalate when deeper reasoning is genuinely needed: architecture decisions, interacting-system failures, unfamiliar systems, Unity lifecycle/state problems, performance diagnosis, major gameplay or animation systems, substantial refactors, complex Blender/Unity integration, or repeated failed attempts. Sol should determine *what* to do when unclear; Terra should normally implement the settled approach.
+- **Higher Sol reasoning:** Reserve for unusually complex problems—persistent bugs that survive sensible investigation, large architectural redesign, difficult concurrency/state interactions, severe unclear performance problems, or broad dependency decisions. Do not use maximum reasoning merely because it is available.
+
+### Subagent strategy
+
+Use subagents only when work can genuinely be parallelized or independent investigation improves confidence. Do not spawn agents merely to create activity. Before delegating, separate investigation, architecture/planning, implementation, asset/Blender work, and verification/testing; delegate independent streams where useful. Avoid overlapping write ownership unless there is a specific reason.
+
+For a complex combat feature, a useful split is: one agent inspects combat architecture, one inspects animation/state dependencies, one investigates relevant assets/Blender requirements, senior reasoning synthesizes the approach, an implementation agent executes it, and a verification agent checks integration and regressions.
+
+### Reconnaissance and Unity/Blender work
+
+Before significant changes:
+
+1. Inspect the relevant repository area and established patterns.
+2. Identify dependencies, callers, managers, state machines, interfaces, ScriptableObjects, animation controllers, input systems, shared utilities, prefabs, scene dependencies, and naming conventions.
+3. Determine whether an existing system already solves part of the problem.
+4. Inspect Unity scenes/prefabs/assets or Blender state/assets when the task requires it.
+5. Form a concise implementation plan.
+
+Do not replace a working system solely because another design appears cleaner. Integrate with existing architecture unless there is a meaningful reason to change it. Preserve Unity serialized references whenever possible; be especially careful with MonoBehaviour class/file names, serialized fields, prefabs, Animator parameters, asset moves, scenes, and input bindings.
+
+Treat Blender MCP as an execution tool, not a reason to use expensive reasoning for every operation. Separate the decision about a rig/material/mesh/animation workflow from the execution of a decided Blender operation. Before destructive Blender work, inspect the current scene and affected objects, preserve existing work, prefer recoverable operations, and verify changes visually or structurally before dependent Unity work.
+
+### Escalation, autonomy, and context efficiency
+
+On a failed implementation attempt: investigate the real error and retry intelligently once; on a second failure, reassess assumptions and inspect the surrounding system; after repeated failure or an unclear root cause, escalate reasoning rather than making speculative edits. Never loop through random edit/run/fail cycles.
+
+When the goal is clear, proceed autonomously through reasonable implementation steps. Ask the user only for genuinely subjective, destructive, product/design-sensitive, or non-inferable decisions. Do not load the entire repository when a targeted search and focused reads will do; give subagents only the context their assigned task needs.
+
+### Verification and completion reporting
+
+Do not treat a task as complete merely because code was written. Where applicable, compile, run tests, inspect warnings/errors, validate Unity references, inspect Blender output, run relevant scenes, verify expected behavior, and check for obvious regressions. If full verification is unavailable, say exactly what remains unverified.
+
+At the end of substantial work, report concisely:
+
+- **Completed:** what changed.
+- **Architecture:** meaningful decisions.
+- **Files/Assets:** important changed files, scenes, prefabs, or Blender assets.
+- **Verification:** what was actually tested or inspected.
+- **Remaining:** unresolved items or required user input.
+
 ## Repo / git conventions
 - Remote: `https://github.com/Takeme-Steph/Elementals-Fight` (origin), default branch `main`.
 - Git LFS is enabled (`.gitattributes` tracks `.fbx`/`.FBX`/`.png`/`.tga`/`.anim`/`.controller`/etc.) — don't bypass it for new or changed binaries.

@@ -36,6 +36,38 @@ public class InputReader : ScriptableObject, PlayerInput.IGroundActions, PlayerI
         }
     }
 
+    private void OnDisable()
+    {
+        if (_playerInput == null)
+        {
+            return;
+        }
+
+        // PlayerInput is generated and owns native Input System action maps. Leaving
+        // either map enabled when this shared ScriptableObject unloads makes its
+        // finalizer assert and leaves the input system holding stale callbacks across
+        // play-mode restarts / scene changes. Clear both callback sets, disable every
+        // map, then dispose the generated asset before allowing it to be collected.
+        _playerInput.Ground.SetCallbacks(null);
+        _playerInput.UI.SetCallbacks(null);
+        _playerInput.Disable();
+
+        // ScriptableObject.OnDisable also runs when the Editor returns to edit mode.
+        // The generated wrapper's Dispose() always calls Destroy(asset), which Unity
+        // rejects outside play mode. This asset is a runtime-created, non-persistent
+        // InputActionAsset, so destroying that exact instance immediately in edit mode
+        // is safe and prevents it surviving a script/domain reload.
+        if (Application.isPlaying)
+        {
+            _playerInput.Dispose();
+        }
+        else
+        {
+            DestroyImmediate(_playerInput.asset);
+        }
+        _playerInput = null;
+    }
+
     public void OnMove(InputAction.CallbackContext context)
     {
         MoveEvent.Invoke(context.ReadValue<Vector2>());
