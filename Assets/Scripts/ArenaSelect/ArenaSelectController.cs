@@ -44,6 +44,7 @@ public class ArenaSelectController : MonoBehaviour
     public int CurrentIndex { get; private set; } = -1;
 
     private bool validRefs = true;
+    private bool isLoading;
 
     private void Awake()
     {
@@ -194,14 +195,29 @@ public class ArenaSelectController : MonoBehaviour
 
     private void OnConfirm()
     {
-        if (roster == null || CurrentIndex < 0)
+        if (isLoading || roster == null || CurrentIndex < 0)
         {
             return;
         }
 
+        ArenaDefinition selectedArena = roster.Get(CurrentIndex);
+        if (selectedArena == null)
+        {
+            return;
+        }
+
+        isLoading = true;
         PlayerPrefs.SetInt("selectedArena", CurrentIndex);
         PlayerPrefs.Save();
-        SceneManager.LoadScene("FightScene");
+
+        // A direct LoadScene used to freeze the last arena-select frame while FightScene
+        // initialized. The overlay owns the async operation instead, so the player gets
+        // an intentional gateway moment and never sees a stalled confirmation screen.
+        MythicLoadingOverlay.Begin(
+            "FightScene",
+            selectedArena,
+            PlayerPrefs.GetInt("selectedCharacter", 0),
+            PlayerPrefs.GetInt("selectedOpponent", 1));
     }
 
     private void OnBackTapped()

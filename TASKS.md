@@ -889,6 +889,12 @@ Not independently re-verified, taken on Cowork's own explicit verification note:
 **Left open, matching the task's own "two things left":** the jump-feel design call (apex currently reads as 3.99 m for a 1.80 m character, faithfully preserving old feel) and the FightScene background-art framing pass (parallax sprites still placed for the old 2-units-per-metre world) are both explicitly Stephanie's call / blocked on the arena rebuild, not something to guess at here.
 
 ---
+### [x] Add the mythology gateway loading transition between ArenaSelect and FightScene
+**Why:** Arena confirmation previously called `SceneManager.LoadScene("FightScene")` directly, leaving the player on a visually frozen selection frame during scene initialization. The loading moment is part of the match's emotional pacing: it should carry the selected arena's palette forward, make the locked matchup feel deliberate, and communicate progress without baking a specific culture into a reusable UI shell.
+
+**Done (2026-09-05):** Added `MythicLoadingOverlay`, a runtime-built fullscreen Canvas started by `ArenaSelectController` when the player confirms an arena. It holds the completed selection over an asynchronous FightScene load, renders the palette-driven panorama, drifting stardust, top technical anchors, elemental versus medals, lore ticker, rune decoder and accelerating loading-tip emission, then activates FightScene only after both its load operation and a short readable display window complete. The confirm button is now guarded against repeat presses while loading. It uses the selected `ArenaDefinition` palette, while `CharacterSelectController` caches its two just-confirmed `CharacterDefinition` values before moving to ArenaSelect. That keeps fighter names and elemental colours data-driven for future roster entries without forcing ArenaSelect to take a second roster dependency or requiring unsafe scene/prefab YAML edits.
+
+---
 ### [ ] Mixamo placeholder clips sink Yemoja's feet through the floor - separate bug from the idle warping, still open
 **Why:** While diagnosing the custom idle's retarget warping (fixed, see `claude/yemoja-idle-retarget-fix.md`), toe-bone floor clearance was measured across clips on Yemoja. Her own `Yemoja@Idle` never goes below the floor: **+0.0401 to +0.0713** world units. The Mixamo placeholders do, badly and constantly:
 

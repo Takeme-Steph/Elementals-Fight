@@ -350,6 +350,11 @@ public class CharacterSelectController : MonoBehaviour
         }
         else
         {
+            // ArenaSelect has no CharacterRoster dependency by design. Preserve the
+            // confirmed definitions for its loading gateway before this scene unloads,
+            // so the next screen can present any future fighter without index-based UI
+            // styling or another duplicate roster reference.
+            MythicLoadingOverlay.CacheMatchup(roster.Get(playerIndex), roster.Get(CurrentIndex));
             PlayerPrefs.SetInt("selectedCharacter", playerIndex);
             PlayerPrefs.SetInt("selectedOpponent", CurrentIndex);
             PlayerPrefs.Save();
