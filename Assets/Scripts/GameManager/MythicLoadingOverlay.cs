@@ -22,6 +22,9 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     // therefore strand a perfectly-ready scene behind the loading overlay.
     private const float ReadyProgress = 0.89f;
     private const float ActivationSafetySeconds = 30f;
+    // Portrait art is not ready yet, so this currently shifts Yemoja's monogram. Keep
+    // the adjustment here: the future portrait uses the same graphic RectTransform.
+    private const float YemojaPortraitGraphicOffsetY = 16f;
 
     // Keep the decoder ASCII-only. The project defaults dynamically-created TMP text
     // to Liberation Sans SDF, whose glyph atlas does not include the decorative rune
@@ -55,8 +58,10 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private TMP_Text progressText;
     private TMP_Text loreText;
     private TMP_Text runeLine;
+    private TMP_Text unlitRuneLine;
     private RectTransform beamFill;
     private RectTransform beamTip;
+    private RectTransform glowingRuneClip;
     private CanvasGroup rootGroup;
     private Sprite circleSprite;
     private float displayedProgress;
@@ -194,9 +199,12 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             starSpeeds.Add(Random.Range(6f, 23f));
         }
 
-        CreateTopAnchors(canvas.transform);
-        CreateMedals(canvas.transform, playerIndex, opponentIndex);
-        CreateLowerDecoder(canvas.transform);
+        RectTransform safeZone = CreateRect("SafeZoneContainer", canvas.transform);
+        safeZone.gameObject.AddComponent<SafeAreaContainer>();
+
+        CreateTopAnchors(safeZone);
+        CreateMatchup(safeZone, playerIndex, opponentIndex);
+        CreateLowerDecoder(safeZone);
         CreateWarpFlash(canvas.transform);
         ShuffleRunes();
         loreText.text = FormatLore(LoreLines[0]);
@@ -206,46 +214,56 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
 
     private void CreateTopAnchors(Transform parent)
     {
-        TMP_Text sync = CreateText("SyncTag", parent, "[ SYNCHRONIZING BOUNDARIES ]", 22, FontStyles.Bold, Color.white);
-        SetAnchors(sync.rectTransform, new Vector2(0.035f, 0.91f), new Vector2(0.4f, 0.97f));
+        TMP_Text sync = CreateText("TopLeft_StatusText", parent, "[ SYNCHRONIZING BOUNDARIES ]", 22, FontStyles.Bold, Color.white);
+        Pin(sync.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(520f, 48f), new Vector2(50f, -50f));
         sync.alignment = TextAlignmentOptions.Left;
-        TMP_Text stage = CreateText("StageTag", parent, $"[ STAGE: {(arena != null ? arena.DisplayName : "MYTHIC GATEWAY").ToUpperInvariant()} ]", 22, FontStyles.Bold, Color.white);
-        SetAnchors(stage.rectTransform, new Vector2(0.60f, 0.91f), new Vector2(0.965f, 0.97f));
+        TMP_Text stage = CreateText("TopRight_StageText", parent, $"[ STAGE: {(arena != null ? arena.DisplayName : "MYTHIC GATEWAY").ToUpperInvariant()} ]", 22, FontStyles.Bold, Color.white);
+        Pin(stage.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(520f, 48f), new Vector2(-50f, -50f));
         stage.alignment = TextAlignmentOptions.Right;
     }
 
-    private void CreateMedals(Transform parent, int playerIndex, int opponentIndex)
+    private void CreateMatchup(Transform parent, int playerIndex, int opponentIndex)
     {
         FighterStyle p1 = hasCachedMatchup ? cachedPlayer : GetFallbackFighterStyle(playerIndex);
         FighterStyle p2 = hasCachedMatchup ? cachedOpponent : GetFallbackFighterStyle(opponentIndex);
-        CreateMedal(parent, new Vector2(0.385f, 0.55f), p1, false);
-        CreateMedal(parent, new Vector2(0.615f, 0.55f), p2, true);
 
-        TMP_Text versus = CreateText("Versus", parent, "( vs )", 32, FontStyles.Bold, Color.white);
-        SetAnchors(versus.rectTransform, new Vector2(0.465f, 0.50f), new Vector2(0.535f, 0.60f));
+        RectTransform matchup = CreateRect("MatchupContainer", parent);
+        Pin(matchup, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(860f, 410f), Vector2.zero);
+
+        CreatePlayerPanel(matchup, "P1_Panel", p1, false);
+        CreatePlayerPanel(matchup, "P2_Panel", p2, true);
+
+        TMP_Text versus = CreateText("VS_Text", matchup, "(vs)", 38, FontStyles.Bold, new Color(1f, 0.82f, 0.42f));
+        Pin(versus.rectTransform, new Vector2(0.5f, 0.57f), new Vector2(0.5f, 0.5f), new Vector2(120f, 72f), Vector2.zero);
         versus.alignment = TextAlignmentOptions.Center;
         versus.characterSpacing = 5f;
     }
 
-    private void CreateMedal(Transform parent, Vector2 anchor, FighterStyle fighter, bool right)
+    private void CreatePlayerPanel(Transform matchup, string panelName, FighterStyle fighter, bool right)
     {
-        Image halo = CreateImage("ElementHalo", parent, WithAlpha(fighter.glow, 0.22f));
+        RectTransform panel = CreateRect(panelName, matchup);
+        Pin(panel, new Vector2(right ? 0.79f : 0.21f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(280f, 360f), Vector2.zero);
+
+        Image halo = CreateImage("ElementHalo", panel, WithAlpha(fighter.glow, 0.22f));
         halo.sprite = circleSprite;
-        halo.rectTransform.anchorMin = halo.rectTransform.anchorMax = anchor;
-        halo.rectTransform.sizeDelta = new Vector2(250f, 250f);
+        Pin(halo.rectTransform, new Vector2(0.5f, 0.64f), new Vector2(0.5f, 0.5f), new Vector2(250f, 250f), Vector2.zero);
         Image frame = CreateImage("ProfileFrame", halo.transform, new Color(0.015f, 0.04f, 0.07f, 0.90f));
         frame.sprite = circleSprite;
         Stretch(frame.rectTransform, new Vector2(23f, 23f));
         Outline outline = frame.gameObject.AddComponent<Outline>();
         outline.effectColor = fighter.primary;
         outline.effectDistance = new Vector2(5f, -5f);
-        TMP_Text initial = CreateText("Monogram", frame.transform, fighter.initial, 82, FontStyles.Bold, fighter.glow);
+        Shadow portraitShadow = frame.gameObject.AddComponent<Shadow>();
+        portraitShadow.effectColor = WithAlpha(Color.black, 0.82f);
+        portraitShadow.effectDistance = new Vector2(5f, -7f);
+        TMP_Text initial = CreateText("PortraitGraphic", frame.transform, fighter.initial, 82, FontStyles.Bold, fighter.glow);
         Stretch(initial.rectTransform);
         initial.alignment = TextAlignmentOptions.Center;
-        TMP_Text label = CreateText("FighterName", parent, $"{(right ? "P2" : "P1")}: {fighter.name.ToUpperInvariant()}", 25, FontStyles.Bold, Color.white);
-        float xMin = right ? 0.54f : 0.26f;
-        float xMax = right ? 0.80f : 0.46f;
-        SetAnchors(label.rectTransform, new Vector2(xMin, 0.34f), new Vector2(xMax, 0.39f));
+        initial.rectTransform.anchoredPosition = new Vector2(0f, fighter.name == "Yemoja" ? YemojaPortraitGraphicOffsetY : 0f);
+        initial.gameObject.AddComponent<Shadow>().effectColor = WithAlpha(fighter.primary, 0.72f);
+
+        TMP_Text label = CreateText("PlayerNameText", panel, $"{(right ? "P2" : "P1")}: {fighter.name.ToUpperInvariant()}", 25, FontStyles.Bold, Color.white);
+        Pin(label.rectTransform, new Vector2(0.5f, 0.10f), new Vector2(0.5f, 0.5f), new Vector2(300f, 48f), Vector2.zero);
         label.alignment = TextAlignmentOptions.Center;
         label.color = Color.Lerp(new Color(1f, 0.82f, 0.42f), fighter.glow, 0.22f);
     }
@@ -253,19 +271,18 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private void CreateLowerDecoder(Transform parent)
     {
         Image ticker = CreateImage("LoreTicker", parent, new Color(0.01f, 0.025f, 0.05f, 0.72f));
-        SetAnchors(ticker.rectTransform, new Vector2(0.16f, 0.175f), new Vector2(0.84f, 0.245f));
-        loreText = CreateText("LoreText", ticker.transform, string.Empty, 20, FontStyles.Normal, new Color(0.89f, 0.95f, 1f));
-        Stretch(loreText.rectTransform, new Vector2(26f, 10f));
-        loreText.alignment = TextAlignmentOptions.Center;
+        Pin(ticker.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(1560f, 66f), new Vector2(50f, 150f));
+        loreText = CreateText("BottomLeft_LoreText", parent, string.Empty, 20, FontStyles.Normal, new Color(0.89f, 0.95f, 1f));
+        Pin(loreText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(1560f, 66f), new Vector2(50f, 150f));
+        loreText.alignment = TextAlignmentOptions.Left;
+        loreText.margin = new Vector4(26f, 10f, 26f, 10f);
         loreText.textWrappingMode = TextWrappingModes.NoWrap;
 
-        runeLine = CreateText("RuneDecoder", parent, string.Empty, 29, FontStyles.Bold, WithAlpha(glow, 0.72f));
-        SetAnchors(runeLine.rectTransform, new Vector2(0.13f, 0.074f), new Vector2(0.81f, 0.11f));
-        runeLine.alignment = TextAlignmentOptions.Center;
-        runeLine.characterSpacing = 15f;
+        RectTransform loadingBar = CreateRect("LoadingBarContainer", parent);
+        Pin(loadingBar, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(1536f, 58f), new Vector2(0f, 50f));
 
-        Image beamBack = CreateImage("LoadingBeamBack", parent, new Color(0.52f, 0.78f, 0.9f, 0.18f));
-        SetAnchors(beamBack.rectTransform, new Vector2(0.10f, 0.055f), new Vector2(0.90f, 0.072f));
+        Image beamBack = CreateImage("LoadingBeamBack", loadingBar, new Color(0.52f, 0.78f, 0.9f, 0.18f));
+        SetAnchors(beamBack.rectTransform, new Vector2(0f, 0.12f), new Vector2(1f, 0.42f));
         beamFill = CreateRect("LoadingBeam", beamBack.transform);
         beamFill.anchorMin = Vector2.zero;
         beamFill.anchorMax = new Vector2(0f, 1f);
@@ -276,11 +293,30 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         beamTip.anchorMin = beamTip.anchorMax = new Vector2(0f, 0.5f);
         beamTip.sizeDelta = new Vector2(22f, 30f);
         beamTip.gameObject.AddComponent<Image>().color = Color.white;
+
+        unlitRuneLine = CreateText("UnlitRunes", loadingBar, string.Empty, 27, FontStyles.Bold, new Color(0.42f, 0.58f, 0.68f, 0.34f));
+        SetAnchors(unlitRuneLine.rectTransform, new Vector2(0.02f, 0.43f), new Vector2(0.98f, 0.98f));
+        unlitRuneLine.alignment = TextAlignmentOptions.Center;
+        unlitRuneLine.characterSpacing = 14f;
+
+        glowingRuneClip = CreateRect("GlowingRunesReveal", loadingBar);
+        glowingRuneClip.anchorMin = new Vector2(0.02f, 0.43f);
+        glowingRuneClip.anchorMax = new Vector2(0.02f, 0.98f);
+        glowingRuneClip.offsetMin = glowingRuneClip.offsetMax = Vector2.zero;
+        glowingRuneClip.gameObject.AddComponent<RectMask2D>();
+        runeLine = CreateText("GlowingRunes", glowingRuneClip, string.Empty, 27, FontStyles.Bold, WithAlpha(glow, 0.92f));
+        runeLine.rectTransform.anchorMin = new Vector2(0f, 0f);
+        runeLine.rectTransform.anchorMax = new Vector2(0f, 1f);
+        runeLine.rectTransform.pivot = new Vector2(0f, 0.5f);
+        runeLine.rectTransform.sizeDelta = new Vector2(1475f, 0f);
+        runeLine.alignment = TextAlignmentOptions.Center;
+        runeLine.characterSpacing = 14f;
+
         TMP_Text decoderStatus = CreateText("DecoderStatus", parent, "[ DECODING RUNES ]", 17, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
-        SetAnchors(decoderStatus.rectTransform, new Vector2(0.10f, 0.018f), new Vector2(0.43f, 0.048f));
+        Pin(decoderStatus.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(420f, 38f), new Vector2(50f, 50f));
         decoderStatus.alignment = TextAlignmentOptions.Left;
-        progressText = CreateText("Progress", parent, "0%", 22, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
-        SetAnchors(progressText.rectTransform, new Vector2(0.78f, 0.018f), new Vector2(0.90f, 0.048f));
+        progressText = CreateText("BottomRight_Percentage", parent, "0%", 22, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
+        Pin(progressText.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(160f, 42f), new Vector2(-50f, 50f));
         progressText.alignment = TextAlignmentOptions.Right;
     }
 
@@ -331,6 +367,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             beamFill.anchorMax = new Vector2(displayedProgress, 1f);
             beamTip.anchorMin = beamTip.anchorMax = new Vector2(displayedProgress, 0.5f);
             beamTip.localScale = Vector3.one * (1f + Mathf.PingPong(t * (4f + displayedProgress * 16f), 0.55f));
+            glowingRuneClip.anchorMax = new Vector2(Mathf.Lerp(0.02f, 0.98f, displayedProgress), 0.98f);
             progressText.text = $"{Mathf.RoundToInt(displayedProgress * 100f)}%";
         }
 
@@ -349,10 +386,11 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
 
     private void ShuffleRunes()
     {
-        if (runeLine == null) return;
+        if (runeLine == null || unlitRuneLine == null) return;
         string decoded = string.Empty;
         for (int i = 0; i < 13; i++) decoded += Runes[Random.Range(0, Runes.Length)] + "  ";
         runeLine.text = decoded;
+        unlitRuneLine.text = decoded;
     }
 
     private static void CreateSilhouetteBand(Transform parent, float minY, float maxY, Color color)
@@ -458,5 +496,12 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private static TMP_Text CreateText(string name, Transform parent, string text, float size, FontStyles style, Color color) { TextMeshProUGUI label = CreateUi<TextMeshProUGUI>(name, parent); label.text = text; label.fontSize = size; label.fontStyle = style; label.color = color; label.raycastTarget = false; return label; }
     private static void Stretch(RectTransform rect, Vector2 inset = default) { rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = inset; rect.offsetMax = -inset; }
     private static void SetAnchors(RectTransform rect, Vector2 min, Vector2 max) { rect.anchorMin = min; rect.anchorMax = max; rect.offsetMin = rect.offsetMax = Vector2.zero; }
+    private static void Pin(RectTransform rect, Vector2 anchor, Vector2 pivot, Vector2 size, Vector2 position)
+    {
+        rect.anchorMin = rect.anchorMax = anchor;
+        rect.pivot = pivot;
+        rect.sizeDelta = size;
+        rect.anchoredPosition = position;
+    }
     private static Color WithAlpha(Color color, float alpha) => new Color(color.r, color.g, color.b, alpha);
 }
