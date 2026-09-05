@@ -20,7 +20,9 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private const int RuneCount = 24;
     private const int RuneVariantCount = 12;
     private const int RuneCellSize = 48;
+    private const float RuneProgressStart = 0.025f;
     private const float RuneProgressWidth = 0.91f;
+    private const int TipSparkPoolSize = 18;
     // Unity documents 0.9 as the pre-activation ceiling, but some platform/player
     // combinations report a value a few ULPs below it. Waiting for an exact 0.9f can
     // therefore strand a perfectly-ready scene behind the loading overlay.
@@ -49,6 +51,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private readonly List<float> starSpeeds = new();
     private readonly List<Image> unlitRuneImages = new();
     private readonly List<Image> glowingRuneImages = new();
+    private readonly List<UiSpark> tipSparks = new();
 
     private ArenaDefinition arena;
     private Color accent;
@@ -64,6 +67,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private RectTransform glowingRuneClip;
     private RectTransform glowingRuneRail;
     private PrismRailGraphic chargedRail;
+    private PrismRailGraphic chargedAura;
     private CanvasGroup rootGroup;
     private Sprite circleSprite;
     private Sprite[] runeSprites;
@@ -73,6 +77,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private float nextLoreSwap;
     private int loreIndex;
     private bool runesInitialized;
+    private float sparkEmissionBudget;
 
     /// <summary>Creates the gateway and begins loading the supplied scene immediately.</summary>
     public static void Begin(string sceneName, ArenaDefinition selectedArena, int playerIndex, int opponentIndex)
@@ -292,33 +297,38 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         loadingBarRect.offsetMin = new Vector2(50f, 50f);
         loadingBarRect.offsetMax = new Vector2(-50f, 122f);
 
-        // The reference rail is a tapered prism, not a rounded or rectangular slider.
-        // Nested procedural meshes create its glow, bright outer edge, dark separator,
-        // and fine inner edge without requiring a resolution-specific bitmap asset.
-        PrismRailGraphic outerGlow = CreatePrism("RuneRailOuterGlow", loadingBarRect, WithAlpha(glow, 0.18f), 23f, 1f);
-        Stretch(outerGlow.rectTransform, new Vector2(-5f, -5f));
-        PrismRailGraphic outerEdge = CreatePrism("RuneRailOuterEdge", loadingBarRect, WithAlpha(Color.Lerp(glow, Color.white, 0.42f), 0.88f), 19f, 1f);
-        Stretch(outerEdge.rectTransform);
-        PrismRailGraphic borderVoid = CreatePrism("RuneRailBorderVoid", loadingBarRect, new Color(0.008f, 0.025f, 0.045f, 0.98f), 17f, 1f);
-        Stretch(borderVoid.rectTransform, new Vector2(3f, 3f));
-        PrismRailGraphic innerEdge = CreatePrism("RuneRailInnerEdge", loadingBarRect, WithAlpha(glow, 0.38f), 15f, 1f);
-        Stretch(innerEdge.rectTransform, new Vector2(6f, 6f));
-        PrismRailGraphic railBack = CreatePrism("RuneRailBackground", loadingBarRect, new Color(0.012f, 0.055f, 0.082f, 0.96f), 13f, 1f);
-        Stretch(railBack.rectTransform, new Vector2(8f, 8f));
+        // A borderless energy trace keeps the lower edge open and theatrical. The
+        // faint track, soft charged aura, and bright core are separate thin meshes;
+        // their combined alpha gives a bloom-like result without post-processing.
+        PrismRailGraphic energyTrack = CreatePrism("UnchargedEnergyTrace", loadingBarRect, WithAlpha(glow, 0.20f), 3f, 1f);
+        SetAnchors(energyTrack.rectTransform, new Vector2(RuneProgressStart, 0.47f), new Vector2(RuneProgressWidth, 0.53f));
 
-        // The charged energy is rendered as a multi-stop mesh gradient and clipped
-        // geometrically at progress, so it remains inside the same prism as the runes.
-        chargedRail = CreatePrism("ChargedRuneGradient", loadingBarRect, Color.white, 13f, 0f);
+        chargedAura = CreatePrism("ChargedEnergyAura", loadingBarRect, Color.white, 10f, 0f);
+        chargedAura.ConfigureGradient(
+            WithAlpha(Color.Lerp(accent, new Color(0.01f, 0.08f, 0.12f), 0.48f), 0.10f),
+            WithAlpha(glow, 0.34f));
+        SetAnchors(chargedAura.rectTransform, new Vector2(RuneProgressStart, 0.31f), new Vector2(RuneProgressWidth, 0.69f));
+
+        chargedRail = CreatePrism("ChargedEnergyCore", loadingBarRect, Color.white, 6f, 0f);
         chargedRail.ConfigureGradient(
-            WithAlpha(Color.Lerp(accent, new Color(0.01f, 0.08f, 0.12f), 0.58f), 0.56f),
-            WithAlpha(Color.Lerp(glow, Color.white, 0.18f), 0.78f));
-        chargedRail.rectTransform.anchorMin = new Vector2(0.006f, 0f);
-        chargedRail.rectTransform.anchorMax = new Vector2(RuneProgressWidth, 1f);
-        chargedRail.rectTransform.offsetMin = new Vector2(8f, 8f);
-        chargedRail.rectTransform.offsetMax = new Vector2(-2f, -8f);
+            WithAlpha(Color.Lerp(accent, glow, 0.28f), 0.72f),
+            WithAlpha(Color.Lerp(glow, Color.white, 0.58f), 1f));
+        SetAnchors(chargedRail.rectTransform, new Vector2(RuneProgressStart, 0.40f), new Vector2(RuneProgressWidth, 0.60f));
+
+        CreateTipSparkPool(loadingBarRect);
+
+        beamTip = CreateRect("EmissionTip", loadingBarRect);
+        beamTip.anchorMin = beamTip.anchorMax = new Vector2(RuneProgressStart, 0.5f);
+        beamTip.sizeDelta = new Vector2(5f, 34f);
+        Image tipImage = beamTip.gameObject.AddComponent<Image>();
+        tipImage.color = Color.white;
+        tipImage.raycastTarget = false;
+        Shadow tipGlow = beamTip.gameObject.AddComponent<Shadow>();
+        tipGlow.effectColor = WithAlpha(glow, 0.9f);
+        tipGlow.effectDistance = Vector2.zero;
 
         RectTransform unlitRail = CreateRect("UnlitRunes", loadingBarRect);
-        SetAnchors(unlitRail, new Vector2(0.025f, 0.12f), new Vector2(RuneProgressWidth, 0.88f));
+        SetAnchors(unlitRail, new Vector2(RuneProgressStart, 0.12f), new Vector2(RuneProgressWidth, 0.88f));
         BuildRuneImages(unlitRail, unlitRuneImages, new Color(0.44f, 0.62f, 0.69f, 0.34f), 0f, 1f);
 
         glowingRuneClip = CreateRect("GlowingRunesReveal", loadingBarRect);
@@ -333,15 +343,6 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         glowingRuneRail.pivot = new Vector2(0f, 0.5f);
         glowingRuneRail.anchoredPosition = Vector2.zero;
         BuildRuneImages(glowingRuneRail, glowingRuneImages, WithAlpha(glow, 0.96f), 0.025f, RuneProgressWidth);
-
-        beamTip = CreateRect("EmissionTip", loadingBarRect);
-        beamTip.anchorMin = beamTip.anchorMax = new Vector2(0f, 0.5f);
-        beamTip.sizeDelta = new Vector2(16f, 82f);
-        Image tipImage = beamTip.gameObject.AddComponent<Image>();
-        tipImage.color = Color.white;
-        Shadow tipGlow = beamTip.gameObject.AddComponent<Shadow>();
-        tipGlow.effectColor = WithAlpha(glow, 0.9f);
-        tipGlow.effectDistance = Vector2.zero;
 
         progressText = CreateText("BottomRight_Percentage", loadingBarRect, "0%", 22, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
         Pin(progressText.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(126f, 48f), new Vector2(-18f, 0f));
@@ -393,16 +394,22 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         if (loadingBarRect != null)
         {
             float railWidth = loadingBarRect.rect.width;
-            glowingRuneClip.anchorMax = new Vector2(RuneProgressWidth * displayedProgress, 1f);
+            float tipAnchor = Mathf.Lerp(RuneProgressStart, RuneProgressWidth, displayedProgress);
+            glowingRuneClip.anchorMax = new Vector2(tipAnchor, 1f);
             glowingRuneRail.sizeDelta = new Vector2(railWidth, 0f);
             if (chargedRail != null)
             {
                 chargedRail.SetProgress(displayedProgress, t * 0.42f);
             }
-            beamTip.anchorMin = beamTip.anchorMax = new Vector2(RuneProgressWidth * displayedProgress, 0.5f);
+            if (chargedAura != null)
+            {
+                chargedAura.SetProgress(displayedProgress, t * 0.33f);
+            }
+            beamTip.anchorMin = beamTip.anchorMax = new Vector2(tipAnchor, 0.5f);
             float tipPulse = Mathf.PingPong(t * (4f + displayedProgress * 16f), 0.55f);
             beamTip.localScale = new Vector3(1f + tipPulse, 1f + tipPulse * 0.18f, 1f);
             progressText.text = $"{Mathf.RoundToInt(displayedProgress * 100f)}%";
+            UpdateTipSparks(railWidth, tipAnchor, Time.unscaledDeltaTime);
         }
 
         if (Time.unscaledTime >= nextRuneShuffle)
@@ -442,6 +449,73 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             rune.preserveAspect = true;
             targets.Add(rune);
         }
+    }
+
+    private void CreateTipSparkPool(Transform parent)
+    {
+        RectTransform sparkLayer = CreateRect("TipSparkLayer", parent);
+        Stretch(sparkLayer);
+        for (int i = 0; i < TipSparkPoolSize; i++)
+        {
+            Image image = CreateImage($"TipSpark_{i:00}", sparkLayer, Color.clear);
+            image.sprite = circleSprite;
+            RectTransform rect = image.rectTransform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = Vector2.one * 5f;
+            tipSparks.Add(new UiSpark(rect, image));
+        }
+    }
+
+    private void UpdateTipSparks(float railWidth, float tipAnchor, float deltaTime)
+    {
+        // A bounded pool gives the active-tip motion Gemini's review calls for without
+        // allocating or emitting hundreds of ParticleSystem objects per second.
+        float emissionRate = Mathf.Lerp(12f, 46f, displayedProgress);
+        sparkEmissionBudget += deltaTime * emissionRate;
+        while (sparkEmissionBudget >= 1f)
+        {
+            EmitTipSpark(railWidth * tipAnchor);
+            sparkEmissionBudget -= 1f;
+        }
+
+        for (int i = 0; i < tipSparks.Count; i++)
+        {
+            UiSpark spark = tipSparks[i];
+            if (spark.remainingLife <= 0f)
+            {
+                continue;
+            }
+
+            spark.remainingLife -= deltaTime;
+            spark.rect.anchoredPosition += spark.velocity * deltaTime;
+            float normalizedLife = Mathf.Clamp01(spark.remainingLife / spark.totalLife);
+            spark.image.color = WithAlpha(Color.Lerp(accent, Color.white, 0.68f), normalizedLife * normalizedLife * 0.82f);
+        }
+    }
+
+    private void EmitTipSpark(float tipX)
+    {
+        UiSpark target = null;
+        for (int i = 0; i < tipSparks.Count; i++)
+        {
+            if (tipSparks[i].remainingLife <= 0f)
+            {
+                target = tipSparks[i];
+                break;
+            }
+        }
+        if (target == null)
+        {
+            return;
+        }
+
+        target.totalLife = Random.Range(0.22f, 0.55f);
+        target.remainingLife = target.totalLife;
+        target.velocity = new Vector2(Random.Range(-34f, 34f), Random.Range(18f, 72f));
+        target.rect.anchoredPosition = new Vector2(tipX + Random.Range(-6f, 6f), Random.Range(-7f, 7f));
+        target.rect.sizeDelta = Vector2.one * Random.Range(3f, 8f);
+        target.image.color = WithAlpha(Color.white, 0.92f);
     }
 
     private static void CreateSilhouetteBand(Transform parent, float minY, float maxY, Color color)
@@ -495,6 +569,24 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             string displayName = string.IsNullOrWhiteSpace(definition.DisplayName) ? "Challenger" : definition.DisplayName;
             string initial = displayName.Substring(0, 1).ToUpperInvariant();
             return new FighterStyle(displayName, initial, definition.Primary, definition.Glow);
+        }
+    }
+
+    private sealed class UiSpark
+    {
+        public readonly RectTransform rect;
+        public readonly Image image;
+        public Vector2 velocity;
+        public float remainingLife;
+        public float totalLife;
+
+        public UiSpark(RectTransform rect, Image image)
+        {
+            this.rect = rect;
+            this.image = image;
+            velocity = Vector2.zero;
+            remainingLife = 0f;
+            totalLife = 0f;
         }
     }
 
