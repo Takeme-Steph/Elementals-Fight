@@ -23,9 +23,6 @@ public static class CharacterSelectSceneBuilder
     private const string RosterAssetPath = "Assets/Data/Roster/CharacterRoster.asset";
     private const string SparkMaterialPath = "Assets/UI/CharacterSelect/Materials/Spark.mat";
 
-    // Set to false if a project ever wants to keep the old selection script around.
-    private const bool DeleteLegacySelectionScript = true;
-
     private static readonly Vector2 ReferenceResolution = new Vector2(1920f, 1080f);
 
     // (0.65 - 0.5) * 1920 reference width - where the deity model's feet/pedestal sit.
@@ -112,7 +109,7 @@ public static class CharacterSelectSceneBuilder
         DeityStage stage = BuildStage(cam);
         BuildUi(backdrop, stage);
 
-        DeleteLegacyScriptIfConfigured();
+        DeleteLegacyScript();
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
@@ -172,13 +169,8 @@ public static class CharacterSelectSceneBuilder
         return go;
     }
 
-    private static void DeleteLegacyScriptIfConfigured()
+    private static void DeleteLegacyScript()
     {
-        if (!DeleteLegacySelectionScript)
-        {
-            return;
-        }
-
         const string path = "Assets/Scripts/PlayerSelection.cs";
         if (File.Exists(path))
         {
