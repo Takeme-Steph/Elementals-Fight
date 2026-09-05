@@ -165,9 +165,21 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         Image sky = CreateImage("SkyWash", panorama, arena != null ? arena.SkyTop : accent);
         Stretch(sky.rectTransform);
         sky.color = WithAlpha(sky.color, 0.40f);
+        if (arena != null && arena.PanoramaSprite != null)
+        {
+            // Arena key art is optional during the current placeholder-arena phase.
+            // When supplied later it sits beneath the atmosphere and UI, preserving
+            // this screen's cinematic stage-preview composition without new layout.
+            Image keyArt = CreateImage("ArenaKeyArt", panorama, Color.white);
+            keyArt.sprite = arena.PanoramaSprite;
+            keyArt.preserveAspect = false;
+            keyArt.color = WithAlpha(Color.white, 0.62f);
+            Stretch(keyArt.rectTransform);
+        }
         horizon = CreateImage("HorizonGlow", panorama, arena != null ? arena.Horizon : glow);
         SetAnchors(horizon.rectTransform, new Vector2(0f, 0.29f), new Vector2(1f, 0.67f));
         horizon.color = WithAlpha(horizon.color, 0.14f);
+        CreateStagePillars(panorama, deep);
         CreateSilhouetteBand(panorama, 0.16f, 0.27f, WithAlpha(deep, 0.82f));
         CreateSilhouetteBand(panorama, 0.06f, 0.18f, WithAlpha(deep, 0.95f));
 
@@ -187,7 +199,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         CreateLowerDecoder(canvas.transform);
         CreateWarpFlash(canvas.transform);
         ShuffleRunes();
-        loreText.text = LoreLines[0];
+        loreText.text = FormatLore(LoreLines[0]);
         nextLoreSwap = Time.unscaledTime + LorePeriod;
         StartCoroutine(WarpIn());
     }
@@ -220,32 +232,22 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         Image halo = CreateImage("ElementHalo", parent, WithAlpha(fighter.glow, 0.22f));
         halo.sprite = circleSprite;
         halo.rectTransform.anchorMin = halo.rectTransform.anchorMax = anchor;
-        halo.rectTransform.sizeDelta = new Vector2(225f, 225f);
+        halo.rectTransform.sizeDelta = new Vector2(250f, 250f);
         Image frame = CreateImage("ProfileFrame", halo.transform, new Color(0.015f, 0.04f, 0.07f, 0.90f));
         frame.sprite = circleSprite;
         Stretch(frame.rectTransform, new Vector2(23f, 23f));
-        Mask portraitMask = frame.gameObject.AddComponent<Mask>();
-        portraitMask.showMaskGraphic = true;
         Outline outline = frame.gameObject.AddComponent<Outline>();
         outline.effectColor = fighter.primary;
         outline.effectDistance = new Vector2(5f, -5f);
-        if (fighter.icon != null)
-        {
-            Image portrait = CreateImage("FighterPortrait", frame.transform, Color.white);
-            portrait.sprite = fighter.icon;
-            portrait.preserveAspect = true;
-            Stretch(portrait.rectTransform, new Vector2(10f, 10f));
-        }
         TMP_Text initial = CreateText("Monogram", frame.transform, fighter.initial, 82, FontStyles.Bold, fighter.glow);
         Stretch(initial.rectTransform);
         initial.alignment = TextAlignmentOptions.Center;
-        initial.enabled = fighter.icon == null;
-        TMP_Text label = CreateText("FighterName", parent, fighter.name.ToUpperInvariant(), 25, FontStyles.Bold, Color.white);
+        TMP_Text label = CreateText("FighterName", parent, $"{(right ? "P2" : "P1")}: {fighter.name.ToUpperInvariant()}", 25, FontStyles.Bold, Color.white);
         float xMin = right ? 0.54f : 0.26f;
         float xMax = right ? 0.80f : 0.46f;
         SetAnchors(label.rectTransform, new Vector2(xMin, 0.34f), new Vector2(xMax, 0.39f));
         label.alignment = TextAlignmentOptions.Center;
-        label.color = Color.Lerp(Color.white, fighter.glow, 0.25f);
+        label.color = Color.Lerp(new Color(1f, 0.82f, 0.42f), fighter.glow, 0.22f);
     }
 
     private void CreateLowerDecoder(Transform parent)
@@ -258,7 +260,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         loreText.textWrappingMode = TextWrappingModes.NoWrap;
 
         runeLine = CreateText("RuneDecoder", parent, string.Empty, 29, FontStyles.Bold, WithAlpha(glow, 0.72f));
-        SetAnchors(runeLine.rectTransform, new Vector2(0.12f, 0.105f), new Vector2(0.88f, 0.15f));
+        SetAnchors(runeLine.rectTransform, new Vector2(0.13f, 0.074f), new Vector2(0.81f, 0.11f));
         runeLine.alignment = TextAlignmentOptions.Center;
         runeLine.characterSpacing = 15f;
 
@@ -274,9 +276,12 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         beamTip.anchorMin = beamTip.anchorMax = new Vector2(0f, 0.5f);
         beamTip.sizeDelta = new Vector2(22f, 30f);
         beamTip.gameObject.AddComponent<Image>().color = Color.white;
-        progressText = CreateText("Progress", parent, "0% // DECODING RUNES", 18, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
-        SetAnchors(progressText.rectTransform, new Vector2(0.10f, 0.018f), new Vector2(0.90f, 0.048f));
-        progressText.alignment = TextAlignmentOptions.Center;
+        TMP_Text decoderStatus = CreateText("DecoderStatus", parent, "[ DECODING RUNES ]", 17, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
+        SetAnchors(decoderStatus.rectTransform, new Vector2(0.10f, 0.018f), new Vector2(0.43f, 0.048f));
+        decoderStatus.alignment = TextAlignmentOptions.Left;
+        progressText = CreateText("Progress", parent, "0%", 22, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
+        SetAnchors(progressText.rectTransform, new Vector2(0.78f, 0.018f), new Vector2(0.90f, 0.048f));
+        progressText.alignment = TextAlignmentOptions.Right;
     }
 
     private void CreateWarpFlash(Transform parent)
@@ -326,7 +331,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             beamFill.anchorMax = new Vector2(displayedProgress, 1f);
             beamTip.anchorMin = beamTip.anchorMax = new Vector2(displayedProgress, 0.5f);
             beamTip.localScale = Vector3.one * (1f + Mathf.PingPong(t * (4f + displayedProgress * 16f), 0.55f));
-            progressText.text = $"{Mathf.RoundToInt(displayedProgress * 100f)}% // DECODING RUNES";
+            progressText.text = $"{Mathf.RoundToInt(displayedProgress * 100f)}%";
         }
 
         if (Time.unscaledTime >= nextRuneShuffle)
@@ -337,7 +342,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         if (Time.unscaledTime >= nextLoreSwap)
         {
             loreIndex = (loreIndex + 1) % LoreLines.Length;
-            loreText.text = LoreLines[loreIndex];
+            loreText.text = FormatLore(LoreLines[loreIndex]);
             nextLoreSwap = Time.unscaledTime + LorePeriod;
         }
     }
@@ -356,17 +361,35 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         SetAnchors(band.rectTransform, new Vector2(0f, minY), new Vector2(1f, maxY));
     }
 
+    private static void CreateStagePillars(Transform parent, Color deep)
+    {
+        // Four distant vertical forms echo the gateway columns in the visual target
+        // without tying the neutral screen to one culture or requiring final key art.
+        float[] xPositions = { 0.12f, 0.23f, 0.77f, 0.88f };
+        for (int i = 0; i < xPositions.Length; i++)
+        {
+            Image pillar = CreateImage("DistantPillar", parent, WithAlpha(deep, 0.60f));
+            float height = i % 2 == 0 ? 0.42f : 0.31f;
+            SetAnchors(pillar.rectTransform, new Vector2(xPositions[i] - 0.018f, 0.19f), new Vector2(xPositions[i] + 0.018f, 0.19f + height));
+            Outline rim = pillar.gameObject.AddComponent<Outline>();
+            rim.effectColor = WithAlpha(Color.Lerp(deep, Color.white, 0.18f), 0.35f);
+            rim.effectDistance = new Vector2(2f, 0f);
+        }
+    }
+
+    private static string FormatLore(string lore) => $"[ LORE: \"{lore}\" ]";
+
     private static FighterStyle GetFallbackFighterStyle(int index)
     {
         // Fallback for opening ArenaSelect outside the normal CharacterSelect flow.
         // The normal path uses the cached CharacterDefinition data above.
         switch (index)
         {
-            case 0: return new FighterStyle("Earth Mage", "E", new Color(0.40f, 0.92f, 0.56f), new Color(0.72f, 1f, 0.80f), null);
-            case 1: return new FighterStyle("Ninja", "N", new Color(0.70f, 0.36f, 1f), new Color(0.89f, 0.71f, 1f), null);
-            case 2: return new FighterStyle("Warrior Princess", "W", new Color(1f, 0.43f, 0.24f), new Color(1f, 0.78f, 0.42f), null);
-            case 3: return new FighterStyle("Yemoja", "Y", new Color(0.18f, 0.72f, 1f), new Color(0.80f, 0.94f, 1f), null);
-            default: return new FighterStyle("Challenger", "✦", new Color(0.95f, 0.70f, 0.2f), new Color(1f, 0.90f, 0.54f), null);
+            case 0: return new FighterStyle("Earth Mage", "E", new Color(0.40f, 0.92f, 0.56f), new Color(0.72f, 1f, 0.80f));
+            case 1: return new FighterStyle("Ninja", "N", new Color(0.70f, 0.36f, 1f), new Color(0.89f, 0.71f, 1f));
+            case 2: return new FighterStyle("Warrior Princess", "W", new Color(1f, 0.43f, 0.24f), new Color(1f, 0.78f, 0.42f));
+            case 3: return new FighterStyle("Yemoja", "Y", new Color(0.18f, 0.72f, 1f), new Color(0.80f, 0.94f, 1f));
+            default: return new FighterStyle("Challenger", "?", new Color(0.95f, 0.70f, 0.2f), new Color(1f, 0.90f, 0.54f));
         }
     }
 
@@ -376,14 +399,13 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         public readonly string initial;
         public readonly Color primary;
         public readonly Color glow;
-        public readonly Sprite icon;
-        public FighterStyle(string name, string initial, Color primary, Color glow, Sprite icon) { this.name = name; this.initial = initial; this.primary = primary; this.glow = glow; this.icon = icon; }
+        public FighterStyle(string name, string initial, Color primary, Color glow) { this.name = name; this.initial = initial; this.primary = primary; this.glow = glow; }
 
         public static FighterStyle FromDefinition(CharacterDefinition definition)
         {
             string displayName = string.IsNullOrWhiteSpace(definition.DisplayName) ? "Challenger" : definition.DisplayName;
             string initial = displayName.Substring(0, 1).ToUpperInvariant();
-            return new FighterStyle(displayName, initial, definition.Primary, definition.Glow, definition.Icon);
+            return new FighterStyle(displayName, initial, definition.Primary, definition.Glow);
         }
     }
 
