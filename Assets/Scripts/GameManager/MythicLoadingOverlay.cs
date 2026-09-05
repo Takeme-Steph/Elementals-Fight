@@ -133,6 +133,11 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         {
             yield return null;
         }
+
+        // The canvas is DontDestroyOnLoad so it can cover the scene activation frame.
+        // It must be removed immediately afterwards; otherwise FightScene is running
+        // successfully behind this fullscreen, input-blocking Canvas forever.
+        Destroy(gameObject);
     }
 
     private void Build(int playerIndex, int opponentIndex)
