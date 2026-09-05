@@ -63,7 +63,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private RectTransform beamTip;
     private RectTransform glowingRuneClip;
     private RectTransform glowingRuneRail;
-    private RectTransform glowingBeam;
+    private PrismRailGraphic chargedRail;
     private CanvasGroup rootGroup;
     private Sprite circleSprite;
     private Sprite[] runeSprites;
@@ -292,13 +292,30 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         loadingBarRect.offsetMin = new Vector2(50f, 50f);
         loadingBarRect.offsetMax = new Vector2(-50f, 122f);
 
-        // One integrated rail: the backing beam sits directly behind the rune sprites,
-        // and the foreground clip reveals both a brighter beam and a second rune layer.
-        Image railBack = CreateImage("RuneRailBackground", loadingBarRect, new Color(0.015f, 0.06f, 0.09f, 0.88f));
-        Stretch(railBack.rectTransform);
-        Outline railOutline = railBack.gameObject.AddComponent<Outline>();
-        railOutline.effectColor = WithAlpha(glow, 0.52f);
-        railOutline.effectDistance = new Vector2(2f, -2f);
+        // The reference rail is a tapered prism, not a rounded or rectangular slider.
+        // Nested procedural meshes create its glow, bright outer edge, dark separator,
+        // and fine inner edge without requiring a resolution-specific bitmap asset.
+        PrismRailGraphic outerGlow = CreatePrism("RuneRailOuterGlow", loadingBarRect, WithAlpha(glow, 0.18f), 23f, 1f);
+        Stretch(outerGlow.rectTransform, new Vector2(-5f, -5f));
+        PrismRailGraphic outerEdge = CreatePrism("RuneRailOuterEdge", loadingBarRect, WithAlpha(Color.Lerp(glow, Color.white, 0.42f), 0.88f), 19f, 1f);
+        Stretch(outerEdge.rectTransform);
+        PrismRailGraphic borderVoid = CreatePrism("RuneRailBorderVoid", loadingBarRect, new Color(0.008f, 0.025f, 0.045f, 0.98f), 17f, 1f);
+        Stretch(borderVoid.rectTransform, new Vector2(3f, 3f));
+        PrismRailGraphic innerEdge = CreatePrism("RuneRailInnerEdge", loadingBarRect, WithAlpha(glow, 0.38f), 15f, 1f);
+        Stretch(innerEdge.rectTransform, new Vector2(6f, 6f));
+        PrismRailGraphic railBack = CreatePrism("RuneRailBackground", loadingBarRect, new Color(0.012f, 0.055f, 0.082f, 0.96f), 13f, 1f);
+        Stretch(railBack.rectTransform, new Vector2(8f, 8f));
+
+        // The charged energy is rendered as a multi-stop mesh gradient and clipped
+        // geometrically at progress, so it remains inside the same prism as the runes.
+        chargedRail = CreatePrism("ChargedRuneGradient", loadingBarRect, Color.white, 13f, 0f);
+        chargedRail.ConfigureGradient(
+            WithAlpha(Color.Lerp(accent, new Color(0.01f, 0.08f, 0.12f), 0.58f), 0.56f),
+            WithAlpha(Color.Lerp(glow, Color.white, 0.18f), 0.78f));
+        chargedRail.rectTransform.anchorMin = new Vector2(0.006f, 0f);
+        chargedRail.rectTransform.anchorMax = new Vector2(RuneProgressWidth, 1f);
+        chargedRail.rectTransform.offsetMin = new Vector2(8f, 8f);
+        chargedRail.rectTransform.offsetMax = new Vector2(-2f, -8f);
 
         RectTransform unlitRail = CreateRect("UnlitRunes", loadingBarRect);
         SetAnchors(unlitRail, new Vector2(0.025f, 0.12f), new Vector2(RuneProgressWidth, 0.88f));
@@ -309,13 +326,6 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         glowingRuneClip.anchorMax = new Vector2(0f, 1f);
         glowingRuneClip.offsetMin = glowingRuneClip.offsetMax = Vector2.zero;
         glowingRuneClip.gameObject.AddComponent<RectMask2D>();
-
-        Image glowBeamImage = CreateImage("GlowingBeam", glowingRuneClip, WithAlpha(accent, 0.28f));
-        glowingBeam = glowBeamImage.rectTransform;
-        glowingBeam.anchorMin = new Vector2(0f, 0f);
-        glowingBeam.anchorMax = new Vector2(0f, 1f);
-        glowingBeam.pivot = new Vector2(0f, 0.5f);
-        glowingBeam.anchoredPosition = Vector2.zero;
 
         glowingRuneRail = CreateRect("GlowingRunes", glowingRuneClip);
         glowingRuneRail.anchorMin = new Vector2(0f, 0.12f);
@@ -385,9 +395,13 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             float railWidth = loadingBarRect.rect.width;
             glowingRuneClip.anchorMax = new Vector2(RuneProgressWidth * displayedProgress, 1f);
             glowingRuneRail.sizeDelta = new Vector2(railWidth, 0f);
-            glowingBeam.sizeDelta = new Vector2(railWidth * RuneProgressWidth, 0f);
+            if (chargedRail != null)
+            {
+                chargedRail.SetProgress(displayedProgress, t * 0.42f);
+            }
             beamTip.anchorMin = beamTip.anchorMax = new Vector2(RuneProgressWidth * displayedProgress, 0.5f);
-            beamTip.localScale = Vector3.one * (1f + Mathf.PingPong(t * (4f + displayedProgress * 16f), 0.55f));
+            float tipPulse = Mathf.PingPong(t * (4f + displayedProgress * 16f), 0.55f);
+            beamTip.localScale = new Vector3(1f + tipPulse, 1f + tipPulse * 0.18f, 1f);
             progressText.text = $"{Mathf.RoundToInt(displayedProgress * 100f)}%";
         }
 
@@ -645,6 +659,14 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         return go.GetComponent<RectTransform>();
     }
     private static Image CreateImage(string name, Transform parent, Color color) { Image image = CreateUi<Image>(name, parent); image.color = color; image.raycastTarget = false; return image; }
+    private static PrismRailGraphic CreatePrism(string name, Transform parent, Color color, float bevel, float progress)
+    {
+        PrismRailGraphic prism = CreateUi<PrismRailGraphic>(name, parent);
+        prism.color = color;
+        prism.raycastTarget = false;
+        prism.Configure(bevel, progress);
+        return prism;
+    }
     private static TMP_Text CreateText(string name, Transform parent, string text, float size, FontStyles style, Color color) { TextMeshProUGUI label = CreateUi<TextMeshProUGUI>(name, parent); label.text = text; label.fontSize = size; label.fontStyle = style; label.color = color; label.raycastTarget = false; return label; }
     private static void Stretch(RectTransform rect, Vector2 inset = default) { rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = inset; rect.offsetMax = -inset; }
     private static void SetAnchors(RectTransform rect, Vector2 min, Vector2 max) { rect.anchorMin = min; rect.anchorMax = max; rect.offsetMin = rect.offsetMax = Vector2.zero; }
