@@ -17,6 +17,10 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private const float MinimumDisplaySeconds = 2.15f;
     private const float LorePeriod = 4.4f;
     private const int StardustCount = 34;
+    private const int RuneCount = 24;
+    private const int RuneVariantCount = 12;
+    private const int RuneCellSize = 48;
+    private const float RuneProgressWidth = 0.91f;
     // Unity documents 0.9 as the pre-activation ceiling, but some platform/player
     // combinations report a value a few ULPs below it. Waiting for an exact 0.9f can
     // therefore strand a perfectly-ready scene behind the loading overlay.
@@ -26,10 +30,6 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     // the adjustment here: the future portrait uses the same graphic RectTransform.
     private const float YemojaPortraitGraphicOffsetY = 16f;
 
-    // Keep the decoder ASCII-only. The project defaults dynamically-created TMP text
-    // to Liberation Sans SDF, whose glyph atlas does not include the decorative rune
-    // code points used by the initial prototype.
-    private static readonly string[] Runes = { "//", "<>", "[]", "{}", "++", "==", "##", "^^", "**", "||", ">>", "~~" };
     private static readonly string[] LoreLines =
     {
         "Every culture tells tales of the world's forge—where thunder, drums, and distant stars answer one another.",
@@ -47,6 +47,8 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
 
     private readonly List<RectTransform> stars = new();
     private readonly List<float> starSpeeds = new();
+    private readonly List<Image> unlitRuneImages = new();
+    private readonly List<Image> glowingRuneImages = new();
 
     private ArenaDefinition arena;
     private Color accent;
@@ -57,17 +59,20 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private Image flash;
     private TMP_Text progressText;
     private TMP_Text loreText;
-    private TMP_Text runeLine;
-    private TMP_Text unlitRuneLine;
-    private RectTransform beamFill;
+    private RectTransform loadingBarRect;
     private RectTransform beamTip;
     private RectTransform glowingRuneClip;
+    private RectTransform glowingRuneRail;
+    private RectTransform glowingBeam;
     private CanvasGroup rootGroup;
     private Sprite circleSprite;
+    private Sprite[] runeSprites;
+    private Texture2D runeAtlas;
     private float displayedProgress;
     private float nextRuneShuffle;
     private float nextLoreSwap;
     private int loreIndex;
+    private bool runesInitialized;
 
     /// <summary>Creates the gateway and begins loading the supplied scene immediately.</summary>
     public static void Begin(string sceneName, ArenaDefinition selectedArena, int playerIndex, int opponentIndex)
@@ -150,6 +155,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         accent = arena != null ? arena.Accent : new Color(0.18f, 0.83f, 0.9f);
         glow = arena != null ? arena.Glow : new Color(0.38f, 0.95f, 1f);
         circleSprite = CreateCircleSprite();
+        runeSprites = CreateRuneSpriteAtlas();
 
         Canvas canvas = CreateUi<Canvas>("GatewayCanvas", transform);
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -164,6 +170,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         Color deep = arena != null ? arena.Deep : new Color(0.015f, 0.07f, 0.11f);
         background = CreateImage("DeepPanorama", canvas.transform, deep);
         Stretch(background.rectTransform);
+        background.raycastTarget = true;
 
         panorama = CreateRect("PanoramaDrift", canvas.transform);
         Stretch(panorama);
@@ -278,45 +285,56 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         loreText.margin = new Vector4(26f, 10f, 26f, 10f);
         loreText.textWrappingMode = TextWrappingModes.NoWrap;
 
-        RectTransform loadingBar = CreateRect("LoadingBarContainer", parent);
-        Pin(loadingBar, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(1536f, 58f), new Vector2(0f, 50f));
+        loadingBarRect = CreateRect("LoadingBarContainer", parent);
+        loadingBarRect.anchorMin = new Vector2(0f, 0f);
+        loadingBarRect.anchorMax = new Vector2(1f, 0f);
+        loadingBarRect.pivot = new Vector2(0.5f, 0f);
+        loadingBarRect.offsetMin = new Vector2(50f, 50f);
+        loadingBarRect.offsetMax = new Vector2(-50f, 122f);
 
-        Image beamBack = CreateImage("LoadingBeamBack", loadingBar, new Color(0.52f, 0.78f, 0.9f, 0.18f));
-        SetAnchors(beamBack.rectTransform, new Vector2(0f, 0.12f), new Vector2(1f, 0.42f));
-        beamFill = CreateRect("LoadingBeam", beamBack.transform);
-        beamFill.anchorMin = Vector2.zero;
-        beamFill.anchorMax = new Vector2(0f, 1f);
-        beamFill.offsetMin = beamFill.offsetMax = Vector2.zero;
-        Image fillImage = beamFill.gameObject.AddComponent<Image>();
-        fillImage.color = accent;
-        beamTip = CreateRect("EmissionTip", beamBack.transform);
-        beamTip.anchorMin = beamTip.anchorMax = new Vector2(0f, 0.5f);
-        beamTip.sizeDelta = new Vector2(22f, 30f);
-        beamTip.gameObject.AddComponent<Image>().color = Color.white;
+        // One integrated rail: the backing beam sits directly behind the rune sprites,
+        // and the foreground clip reveals both a brighter beam and a second rune layer.
+        Image railBack = CreateImage("RuneRailBackground", loadingBarRect, new Color(0.015f, 0.06f, 0.09f, 0.88f));
+        Stretch(railBack.rectTransform);
+        Outline railOutline = railBack.gameObject.AddComponent<Outline>();
+        railOutline.effectColor = WithAlpha(glow, 0.52f);
+        railOutline.effectDistance = new Vector2(2f, -2f);
 
-        unlitRuneLine = CreateText("UnlitRunes", loadingBar, string.Empty, 27, FontStyles.Bold, new Color(0.42f, 0.58f, 0.68f, 0.34f));
-        SetAnchors(unlitRuneLine.rectTransform, new Vector2(0.02f, 0.43f), new Vector2(0.98f, 0.98f));
-        unlitRuneLine.alignment = TextAlignmentOptions.Center;
-        unlitRuneLine.characterSpacing = 14f;
+        RectTransform unlitRail = CreateRect("UnlitRunes", loadingBarRect);
+        SetAnchors(unlitRail, new Vector2(0.025f, 0.12f), new Vector2(RuneProgressWidth, 0.88f));
+        BuildRuneImages(unlitRail, unlitRuneImages, new Color(0.44f, 0.62f, 0.69f, 0.34f), 0f, 1f);
 
-        glowingRuneClip = CreateRect("GlowingRunesReveal", loadingBar);
-        glowingRuneClip.anchorMin = new Vector2(0.02f, 0.43f);
-        glowingRuneClip.anchorMax = new Vector2(0.02f, 0.98f);
+        glowingRuneClip = CreateRect("GlowingRunesReveal", loadingBarRect);
+        glowingRuneClip.anchorMin = new Vector2(0f, 0f);
+        glowingRuneClip.anchorMax = new Vector2(0f, 1f);
         glowingRuneClip.offsetMin = glowingRuneClip.offsetMax = Vector2.zero;
         glowingRuneClip.gameObject.AddComponent<RectMask2D>();
-        runeLine = CreateText("GlowingRunes", glowingRuneClip, string.Empty, 27, FontStyles.Bold, WithAlpha(glow, 0.92f));
-        runeLine.rectTransform.anchorMin = new Vector2(0f, 0f);
-        runeLine.rectTransform.anchorMax = new Vector2(0f, 1f);
-        runeLine.rectTransform.pivot = new Vector2(0f, 0.5f);
-        runeLine.rectTransform.sizeDelta = new Vector2(1475f, 0f);
-        runeLine.alignment = TextAlignmentOptions.Center;
-        runeLine.characterSpacing = 14f;
 
-        TMP_Text decoderStatus = CreateText("DecoderStatus", parent, "[ DECODING RUNES ]", 17, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
-        Pin(decoderStatus.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(420f, 38f), new Vector2(50f, 50f));
-        decoderStatus.alignment = TextAlignmentOptions.Left;
-        progressText = CreateText("BottomRight_Percentage", parent, "0%", 22, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
-        Pin(progressText.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(160f, 42f), new Vector2(-50f, 50f));
+        Image glowBeamImage = CreateImage("GlowingBeam", glowingRuneClip, WithAlpha(accent, 0.28f));
+        glowingBeam = glowBeamImage.rectTransform;
+        glowingBeam.anchorMin = new Vector2(0f, 0f);
+        glowingBeam.anchorMax = new Vector2(0f, 1f);
+        glowingBeam.pivot = new Vector2(0f, 0.5f);
+        glowingBeam.anchoredPosition = Vector2.zero;
+
+        glowingRuneRail = CreateRect("GlowingRunes", glowingRuneClip);
+        glowingRuneRail.anchorMin = new Vector2(0f, 0.12f);
+        glowingRuneRail.anchorMax = new Vector2(0f, 0.88f);
+        glowingRuneRail.pivot = new Vector2(0f, 0.5f);
+        glowingRuneRail.anchoredPosition = Vector2.zero;
+        BuildRuneImages(glowingRuneRail, glowingRuneImages, WithAlpha(glow, 0.96f), 0.025f, RuneProgressWidth);
+
+        beamTip = CreateRect("EmissionTip", loadingBarRect);
+        beamTip.anchorMin = beamTip.anchorMax = new Vector2(0f, 0.5f);
+        beamTip.sizeDelta = new Vector2(16f, 82f);
+        Image tipImage = beamTip.gameObject.AddComponent<Image>();
+        tipImage.color = Color.white;
+        Shadow tipGlow = beamTip.gameObject.AddComponent<Shadow>();
+        tipGlow.effectColor = WithAlpha(glow, 0.9f);
+        tipGlow.effectDistance = Vector2.zero;
+
+        progressText = CreateText("BottomRight_Percentage", loadingBarRect, "0%", 22, FontStyles.Bold, new Color(0.84f, 0.93f, 1f));
+        Pin(progressText.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(126f, 48f), new Vector2(-18f, 0f));
         progressText.alignment = TextAlignmentOptions.Right;
     }
 
@@ -362,12 +380,14 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             star.anchoredPosition = position;
         }
 
-        if (beamFill != null)
+        if (loadingBarRect != null)
         {
-            beamFill.anchorMax = new Vector2(displayedProgress, 1f);
-            beamTip.anchorMin = beamTip.anchorMax = new Vector2(displayedProgress, 0.5f);
+            float railWidth = loadingBarRect.rect.width;
+            glowingRuneClip.anchorMax = new Vector2(RuneProgressWidth * displayedProgress, 1f);
+            glowingRuneRail.sizeDelta = new Vector2(railWidth, 0f);
+            glowingBeam.sizeDelta = new Vector2(railWidth * RuneProgressWidth, 0f);
+            beamTip.anchorMin = beamTip.anchorMax = new Vector2(RuneProgressWidth * displayedProgress, 0.5f);
             beamTip.localScale = Vector3.one * (1f + Mathf.PingPong(t * (4f + displayedProgress * 16f), 0.55f));
-            glowingRuneClip.anchorMax = new Vector2(Mathf.Lerp(0.02f, 0.98f, displayedProgress), 0.98f);
             progressText.text = $"{Mathf.RoundToInt(displayedProgress * 100f)}%";
         }
 
@@ -386,11 +406,28 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
 
     private void ShuffleRunes()
     {
-        if (runeLine == null || unlitRuneLine == null) return;
-        string decoded = string.Empty;
-        for (int i = 0; i < 13; i++) decoded += Runes[Random.Range(0, Runes.Length)] + "  ";
-        runeLine.text = decoded;
-        unlitRuneLine.text = decoded;
+        if (runeSprites == null || runeSprites.Length == 0) return;
+        int changes = runesInitialized ? 4 : unlitRuneImages.Count;
+        for (int n = 0; n < changes; n++)
+        {
+            int i = runesInitialized ? Random.Range(0, unlitRuneImages.Count) : n;
+            Sprite sprite = runeSprites[Random.Range(0, runeSprites.Length)];
+            unlitRuneImages[i].sprite = sprite;
+            glowingRuneImages[i].sprite = sprite;
+        }
+        runesInitialized = true;
+    }
+
+    private void BuildRuneImages(RectTransform parent, List<Image> targets, Color color, float startAnchor, float endAnchor)
+    {
+        for (int i = 0; i < RuneCount; i++)
+        {
+            Image rune = CreateImage($"Rune_{i:00}", parent, color);
+            float x = Mathf.Lerp(startAnchor, endAnchor, (i + 0.5f) / RuneCount);
+            Pin(rune.rectTransform, new Vector2(x, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(38f, 46f), Vector2.zero);
+            rune.preserveAspect = true;
+            targets.Add(rune);
+        }
     }
 
     private static void CreateSilhouetteBand(Transform parent, float minY, float maxY, Color color)
@@ -447,6 +484,87 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         }
     }
 
+    private Sprite[] CreateRuneSpriteAtlas()
+    {
+        int atlasWidth = RuneCellSize * RuneVariantCount;
+        runeAtlas = new Texture2D(atlasWidth, RuneCellSize, TextureFormat.RGBA32, false);
+        runeAtlas.name = "RuntimeGatewayRuneAtlas";
+        runeAtlas.filterMode = FilterMode.Bilinear;
+        runeAtlas.wrapMode = TextureWrapMode.Clamp;
+
+        Color[] pixels = new Color[atlasWidth * RuneCellSize];
+        for (int i = 0; i < RuneVariantCount; i++)
+        {
+            DrawRuneGlyph(pixels, atlasWidth, i);
+        }
+
+        runeAtlas.SetPixels(pixels);
+        runeAtlas.Apply(false, true);
+
+        Sprite[] sprites = new Sprite[RuneVariantCount];
+        for (int i = 0; i < sprites.Length; i++)
+        {
+            sprites[i] = Sprite.Create(
+                runeAtlas,
+                new Rect(i * RuneCellSize, 0f, RuneCellSize, RuneCellSize),
+                new Vector2(0.5f, 0.5f),
+                RuneCellSize);
+            sprites[i].name = $"GatewayRune_{i:00}";
+        }
+        return sprites;
+    }
+
+    private static void DrawRuneGlyph(Color[] pixels, int atlasWidth, int variant)
+    {
+        void Stroke(float x0, float y0, float x1, float y1)
+        {
+            DrawRuneStroke(pixels, atlasWidth, variant, new Vector2(x0, y0), new Vector2(x1, y1));
+        }
+
+        // These are neutral geometric "gateway code" marks rather than characters
+        // borrowed from one real writing system, keeping the UI mythology-agnostic.
+        switch (variant)
+        {
+            case 0: Stroke(.50f, .12f, .50f, .88f); Stroke(.50f, .52f, .18f, .25f); Stroke(.50f, .52f, .82f, .25f); break;
+            case 1: Stroke(.50f, .10f, .82f, .50f); Stroke(.82f, .50f, .50f, .90f); Stroke(.50f, .90f, .18f, .50f); Stroke(.18f, .50f, .50f, .10f); break;
+            case 2: Stroke(.18f, .15f, .72f, .36f); Stroke(.72f, .36f, .28f, .64f); Stroke(.28f, .64f, .82f, .85f); break;
+            case 3: Stroke(.18f, .16f, .82f, .84f); Stroke(.82f, .16f, .18f, .84f); Stroke(.25f, .50f, .75f, .50f); break;
+            case 4: Stroke(.50f, .15f, .50f, .88f); Stroke(.18f, .18f, .50f, .47f); Stroke(.82f, .18f, .50f, .47f); Stroke(.25f, .72f, .75f, .72f); break;
+            case 5: Stroke(.16f, .20f, .50f, .48f); Stroke(.50f, .48f, .16f, .80f); Stroke(.50f, .20f, .84f, .48f); Stroke(.84f, .48f, .50f, .80f); break;
+            case 6: Stroke(.50f, .12f, .50f, .88f); Stroke(.50f, .35f, .20f, .16f); Stroke(.50f, .35f, .80f, .16f); Stroke(.50f, .62f, .24f, .82f); break;
+            case 7: Stroke(.50f, .10f, .84f, .50f); Stroke(.84f, .50f, .50f, .90f); Stroke(.50f, .90f, .16f, .50f); Stroke(.16f, .50f, .50f, .10f); Stroke(.22f, .50f, .78f, .50f); break;
+            case 8: Stroke(.64f, .10f, .26f, .50f); Stroke(.26f, .50f, .68f, .48f); Stroke(.68f, .48f, .36f, .90f); break;
+            case 9: Stroke(.20f, .15f, .20f, .85f); Stroke(.80f, .15f, .80f, .85f); Stroke(.20f, .50f, .80f, .50f); Stroke(.20f, .15f, .80f, .50f); break;
+            case 10: Stroke(.18f, .18f, .82f, .82f); Stroke(.82f, .18f, .18f, .82f); Stroke(.28f, .18f, .72f, .18f); Stroke(.28f, .82f, .72f, .82f); break;
+            default: Stroke(.34f, .12f, .34f, .88f); Stroke(.34f, .34f, .76f, .18f); Stroke(.34f, .52f, .76f, .52f); Stroke(.34f, .70f, .76f, .88f); break;
+        }
+    }
+
+    private static void DrawRuneStroke(Color[] pixels, int atlasWidth, int cellIndex, Vector2 start, Vector2 end)
+    {
+        Vector2 a = start * (RuneCellSize - 1);
+        Vector2 b = end * (RuneCellSize - 1);
+        Vector2 segment = b - a;
+        float lengthSquared = segment.sqrMagnitude;
+        int xOffset = cellIndex * RuneCellSize;
+
+        for (int y = 0; y < RuneCellSize; y++)
+        {
+            for (int x = 0; x < RuneCellSize; x++)
+            {
+                Vector2 point = new Vector2(x, y);
+                float t = lengthSquared > 0f ? Mathf.Clamp01(Vector2.Dot(point - a, segment) / lengthSquared) : 0f;
+                float distance = Vector2.Distance(point, a + segment * t);
+                float alpha = 1f - Mathf.SmoothStep(1.2f, 2.8f, distance);
+                int pixelIndex = y * atlasWidth + xOffset + x;
+                if (alpha > pixels[pixelIndex].a)
+                {
+                    pixels[pixelIndex] = new Color(1f, 1f, 1f, alpha);
+                }
+            }
+        }
+    }
+
     private static Sprite CreateCircleSprite()
     {
         const int size = 128;
@@ -471,10 +589,38 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (runeSprites != null)
+        {
+            for (int i = 0; i < runeSprites.Length; i++)
+            {
+                if (runeSprites[i] != null)
+                {
+                    DestroyRuntimeObject(runeSprites[i]);
+                }
+            }
+        }
+        if (runeAtlas != null)
+        {
+            DestroyRuntimeObject(runeAtlas);
+        }
         if (circleSprite != null)
         {
-            Destroy(circleSprite.texture);
-            Destroy(circleSprite);
+            Texture2D circleTexture = circleSprite.texture;
+            DestroyRuntimeObject(circleSprite);
+            DestroyRuntimeObject(circleTexture);
+        }
+    }
+
+    private static void DestroyRuntimeObject(Object target)
+    {
+        if (target == null) return;
+        if (Application.isPlaying)
+        {
+            Destroy(target);
+        }
+        else
+        {
+            DestroyImmediate(target);
         }
     }
 
@@ -492,7 +638,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         go.transform.SetParent(parent, false);
         return go.GetComponent<RectTransform>();
     }
-    private static Image CreateImage(string name, Transform parent, Color color) { Image image = CreateUi<Image>(name, parent); image.color = color; image.raycastTarget = true; return image; }
+    private static Image CreateImage(string name, Transform parent, Color color) { Image image = CreateUi<Image>(name, parent); image.color = color; image.raycastTarget = false; return image; }
     private static TMP_Text CreateText(string name, Transform parent, string text, float size, FontStyles style, Color color) { TextMeshProUGUI label = CreateUi<TextMeshProUGUI>(name, parent); label.text = text; label.fontSize = size; label.fontStyle = style; label.color = color; label.raycastTarget = false; return label; }
     private static void Stretch(RectTransform rect, Vector2 inset = default) { rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = inset; rect.offsetMax = -inset; }
     private static void SetAnchors(RectTransform rect, Vector2 min, Vector2 max) { rect.anchorMin = min; rect.anchorMax = max; rect.offsetMin = rect.offsetMax = Vector2.zero; }
