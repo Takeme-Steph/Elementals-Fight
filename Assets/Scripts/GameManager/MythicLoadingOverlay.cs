@@ -17,8 +17,16 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private const float MinimumDisplaySeconds = 2.15f;
     private const float LorePeriod = 4.4f;
     private const int StardustCount = 34;
+    // Unity documents 0.9 as the pre-activation ceiling, but some platform/player
+    // combinations report a value a few ULPs below it. Waiting for an exact 0.9f can
+    // therefore strand a perfectly-ready scene behind the loading overlay.
+    private const float ReadyProgress = 0.89f;
+    private const float ActivationSafetySeconds = 30f;
 
-    private static readonly string[] Runes = { "ᚨ", "ᚱ", "ᛃ", "ᛟ", "ᛞ", "ᛇ", "ᛉ", "☌", "⌬", "✦", "⟡", "◈" };
+    // Keep the decoder ASCII-only. The project defaults dynamically-created TMP text
+    // to Liberation Sans SDF, whose glyph atlas does not include the decorative rune
+    // code points used by the initial prototype.
+    private static readonly string[] Runes = { "//", "<>", "[]", "{}", "++", "==", "##", "^^", "**", "||", ">>", "~~" };
     private static readonly string[] LoreLines =
     {
         "Every culture tells tales of the world's forge—where thunder, drums, and distant stars answer one another.",
@@ -36,7 +44,6 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
 
     private readonly List<RectTransform> stars = new();
     private readonly List<float> starSpeeds = new();
-    private readonly List<TMP_Text> runeTexts = new();
 
     private ArenaDefinition arena;
     private Color accent;
@@ -96,13 +103,22 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
 
         operation.allowSceneActivation = false;
         float shownFor = 0f;
-        while (operation.progress < 0.9f || shownFor < MinimumDisplaySeconds)
+        while (operation.progress < ReadyProgress || shownFor < MinimumDisplaySeconds)
         {
             shownFor += Time.unscaledDeltaTime;
-            float target = operation.progress < 0.9f
-                ? Mathf.Clamp01(operation.progress / 0.9f) * 0.92f
+            float target = operation.progress < ReadyProgress
+                ? Mathf.Clamp01(operation.progress / ReadyProgress) * 0.92f
                 : Mathf.Min(0.96f, shownFor / MinimumDisplaySeconds * 0.96f);
             displayedProgress = Mathf.MoveTowards(displayedProgress, target, Time.unscaledDeltaTime * 0.68f);
+
+            if (shownFor >= ActivationSafetySeconds && operation.progress < ReadyProgress)
+            {
+                // Do not keep an input-blocking overlay alive forever if a platform
+                // reports a non-standard async progress value. Activation is still
+                // safe: Unity will complete it when its outstanding work is ready.
+                Debug.LogWarning($"MythicLoadingOverlay: '{sceneName}' reported only {operation.progress:0.000} progress after {ActivationSafetySeconds:0} seconds; requesting activation.");
+                break;
+            }
             yield return null;
         }
 
@@ -234,7 +250,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         loreText = CreateText("LoreText", ticker.transform, string.Empty, 20, FontStyles.Normal, new Color(0.89f, 0.95f, 1f));
         Stretch(loreText.rectTransform, new Vector2(26f, 10f));
         loreText.alignment = TextAlignmentOptions.Center;
-        loreText.enableWordWrapping = false;
+        loreText.textWrappingMode = TextWrappingModes.NoWrap;
 
         runeLine = CreateText("RuneDecoder", parent, string.Empty, 29, FontStyles.Bold, WithAlpha(glow, 0.72f));
         SetAnchors(runeLine.rectTransform, new Vector2(0.12f, 0.105f), new Vector2(0.88f, 0.15f));
