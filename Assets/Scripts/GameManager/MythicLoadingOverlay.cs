@@ -68,6 +68,9 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private RectTransform glowingRuneRail;
     private PrismRailGraphic chargedRail;
     private PrismRailGraphic chargedAura;
+    private PrismRailGraphic chargedGlass;
+    private PrismRailGraphic holographicBorder;
+    private PrismRailGraphic holographicBorderAura;
     private CanvasGroup rootGroup;
     private Sprite circleSprite;
     private Sprite[] runeSprites;
@@ -297,9 +300,23 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         loadingBarRect.offsetMin = new Vector2(50f, 50f);
         loadingBarRect.offsetMax = new Vector2(-50f, 122f);
 
-        // A borderless energy trace keeps the lower edge open and theatrical. The
-        // faint track, soft charged aura, and bright core are separate thin meshes;
-        // their combined alpha gives a bloom-like result without post-processing.
+        // A transparent prism restores the reference silhouette without returning to
+        // the old opaque, boxed capsule. The fill remains visible through its glass,
+        // while two hollow animated outlines create a shifting holographic rim.
+        PrismRailGraphic glassSurface = CreatePrism("PrismGlassSurface", loadingBarRect, new Color(0.05f, 0.16f, 0.21f, 0.10f), 20f, 1f);
+        Stretch(glassSurface.rectTransform, new Vector2(2f, 2f));
+
+        chargedGlass = CreatePrism("ChargedGlassFill", loadingBarRect, Color.white, 15f, 0f);
+        chargedGlass.ConfigureGradient(
+            WithAlpha(Color.Lerp(accent, new Color(0.02f, 0.10f, 0.16f), 0.55f), 0.14f),
+            WithAlpha(Color.Lerp(glow, Color.white, 0.28f), 0.46f));
+        chargedGlass.rectTransform.anchorMin = new Vector2(RuneProgressStart, 0.10f);
+        chargedGlass.rectTransform.anchorMax = new Vector2(RuneProgressWidth, 0.90f);
+        chargedGlass.rectTransform.offsetMin = new Vector2(2f, 0f);
+        chargedGlass.rectTransform.offsetMax = new Vector2(-2f, 0f);
+
+        // The faint track, soft charged aura, and bright core remain independent thin
+        // meshes; their combined alpha gives bloom-like energy on low-end mobile GPUs.
         PrismRailGraphic energyTrack = CreatePrism("UnchargedEnergyTrace", loadingBarRect, WithAlpha(glow, 0.20f), 3f, 1f);
         SetAnchors(energyTrack.rectTransform, new Vector2(RuneProgressStart, 0.47f), new Vector2(RuneProgressWidth, 0.53f));
 
@@ -314,6 +331,20 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             WithAlpha(Color.Lerp(accent, glow, 0.28f), 0.72f),
             WithAlpha(Color.Lerp(glow, Color.white, 0.58f), 1f));
         SetAnchors(chargedRail.rectTransform, new Vector2(RuneProgressStart, 0.40f), new Vector2(RuneProgressWidth, 0.60f));
+
+        holographicBorderAura = CreatePrism("HolographicPrismAura", loadingBarRect, Color.white, 23f, 1f);
+        holographicBorderAura.ConfigureGradient(
+            WithAlpha(Color.Lerp(accent, new Color(0.48f, 0.32f, 1f), 0.22f), 0.10f),
+            WithAlpha(Color.Lerp(glow, new Color(1f, 0.42f, 0.76f), 0.18f), 0.20f));
+        holographicBorderAura.ConfigureOutline(5f);
+        Stretch(holographicBorderAura.rectTransform, new Vector2(-3f, -3f));
+
+        holographicBorder = CreatePrism("HolographicPrismBorder", loadingBarRect, Color.white, 20f, 1f);
+        holographicBorder.ConfigureGradient(
+            WithAlpha(Color.Lerp(accent, Color.white, 0.38f), 0.68f),
+            WithAlpha(Color.Lerp(glow, new Color(1f, 0.62f, 0.88f), 0.15f), 0.92f));
+        holographicBorder.ConfigureOutline(2f);
+        Stretch(holographicBorder.rectTransform, new Vector2(1f, 1f));
 
         CreateTipSparkPool(loadingBarRect);
 
@@ -404,6 +435,18 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             if (chargedAura != null)
             {
                 chargedAura.SetProgress(displayedProgress, t * 0.33f);
+            }
+            if (chargedGlass != null)
+            {
+                chargedGlass.SetProgress(displayedProgress, t * 0.27f);
+            }
+            if (holographicBorder != null)
+            {
+                holographicBorder.SetProgress(1f, t * 0.18f);
+            }
+            if (holographicBorderAura != null)
+            {
+                holographicBorderAura.SetProgress(1f, t * 0.13f);
             }
             beamTip.anchorMin = beamTip.anchorMax = new Vector2(tipAnchor, 0.5f);
             float tipPulse = Mathf.PingPong(t * (4f + displayedProgress * 16f), 0.55f);

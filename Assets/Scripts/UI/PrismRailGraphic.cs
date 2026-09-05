@@ -16,6 +16,8 @@ public sealed class PrismRailGraphic : MaskableGraphic
     private float progress = 1f;
     private float phase;
     private bool useGradient;
+    private bool outlineOnly;
+    private float outlineThickness = 2f;
     private Color gradientStart = Color.white;
     private Color gradientEnd = Color.white;
     private readonly List<Vector2> polygon = new(8);
@@ -33,6 +35,13 @@ public sealed class PrismRailGraphic : MaskableGraphic
         gradientStart = start;
         gradientEnd = end;
         useGradient = true;
+        SetVerticesDirty();
+    }
+
+    public void ConfigureOutline(float thickness)
+    {
+        outlineOnly = true;
+        outlineThickness = Mathf.Max(0.5f, thickness);
         SetVerticesDirty();
     }
 
@@ -61,6 +70,12 @@ public sealed class PrismRailGraphic : MaskableGraphic
         float safeBevel = Mathf.Min(bevel, Mathf.Min(rect.width * 0.2f, rect.height * 0.5f));
         float revealX = Mathf.Lerp(rect.xMin, rect.xMax, progress);
 
+        if (outlineOnly)
+        {
+            AddOutline(vertexHelper, rect, safeBevel);
+            return;
+        }
+
         if (!useGradient)
         {
             BuildPrism(rect, safeBevel, polygon);
@@ -80,6 +95,37 @@ public sealed class PrismRailGraphic : MaskableGraphic
             ClipAtMaximumX(scratch, x1, polygon);
             AddPolygon(vertexHelper, polygon, rect);
         }
+    }
+
+    private void AddOutline(VertexHelper vertexHelper, Rect rect, float safeBevel)
+    {
+        float thickness = Mathf.Min(outlineThickness, rect.height * 0.22f);
+        Rect innerRect = new Rect(
+            rect.xMin + thickness,
+            rect.yMin + thickness,
+            Mathf.Max(0f, rect.width - thickness * 2f),
+            Mathf.Max(0f, rect.height - thickness * 2f));
+        float innerBevel = Mathf.Max(0f, safeBevel - thickness);
+
+        BuildPrism(rect, safeBevel, polygon);
+        BuildPrism(innerRect, innerBevel, scratch);
+        for (int i = 0; i < polygon.Count; i++)
+        {
+            int next = (i + 1) % polygon.Count;
+            int first = vertexHelper.currentVertCount;
+            AddVertex(vertexHelper, polygon[i], rect);
+            AddVertex(vertexHelper, polygon[next], rect);
+            AddVertex(vertexHelper, scratch[next], rect);
+            AddVertex(vertexHelper, scratch[i], rect);
+            vertexHelper.AddTriangle(first, first + 1, first + 2);
+            vertexHelper.AddTriangle(first, first + 2, first + 3);
+        }
+    }
+
+    private void AddVertex(VertexHelper vertexHelper, Vector2 point, Rect rect)
+    {
+        Color32 vertexColor = EvaluateColor(Mathf.InverseLerp(rect.xMin, rect.xMax, point.x));
+        vertexHelper.AddVert(point, vertexColor, Vector2.zero);
     }
 
     private void AddPolygon(VertexHelper vertexHelper, List<Vector2> points, Rect rect)
