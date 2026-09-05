@@ -906,6 +906,8 @@ Not independently re-verified, taken on Cowork's own explicit verification note:
 
 **Holographic prism refinement (2026-09-05):** Combined the two directions after in-game review: the open energy rail now sits inside a lightly tinted glass prism with a true hollow mesh border rather than opaque nested panels. Both a 2px animated holographic rim and a soft 5px rim aura shift across arena-derived cyan, white, violet, and rose tones. Loading progress also fills the wider glass interior with a translucent gradient beneath the bright 14px energy core, so the bar reads as charged glass while the runes remain unobstructed.
 
+**Rune-density refinement (2026-09-05):** Measured the reference rail proportions directly and tightened the decoder from 24 oversized glyphs to 40 smaller glyphs across 96% of the prism interior. Expanded the neutral procedural atlas from 12 to 16 variants, reduced the rail to a reference-matched 58px height, and moved the first/last glyph centres to within roughly 3% of the border ends. Only the dim runes ahead of the progress tip now scramble; illuminated runes behind it remain decoded and stable.
+
 ---
 ### [ ] Mixamo placeholder clips sink Yemoja's feet through the floor - separate bug from the idle warping, still open
 **Why:** While diagnosing the custom idle's retarget warping (fixed, see `claude/yemoja-idle-retarget-fix.md`), toe-bone floor clearance was measured across clips on Yemoja. Her own `Yemoja@Idle` never goes below the floor: **+0.0401 to +0.0713** world units. The Mixamo placeholders do, badly and constantly:

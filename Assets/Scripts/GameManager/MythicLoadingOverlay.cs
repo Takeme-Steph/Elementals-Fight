@@ -17,11 +17,11 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     private const float MinimumDisplaySeconds = 2.15f;
     private const float LorePeriod = 4.4f;
     private const int StardustCount = 34;
-    private const int RuneCount = 24;
-    private const int RuneVariantCount = 12;
+    private const int RuneCount = 40;
+    private const int RuneVariantCount = 16;
     private const int RuneCellSize = 48;
-    private const float RuneProgressStart = 0.025f;
-    private const float RuneProgressWidth = 0.91f;
+    private const float RuneProgressStart = 0.018f;
+    private const float RuneProgressWidth = 0.98f;
     private const int TipSparkPoolSize = 18;
     // Unity documents 0.9 as the pre-activation ceiling, but some platform/player
     // combinations report a value a few ULPs below it. Waiting for an exact 0.9f can
@@ -298,7 +298,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         loadingBarRect.anchorMax = new Vector2(1f, 0f);
         loadingBarRect.pivot = new Vector2(0.5f, 0f);
         loadingBarRect.offsetMin = new Vector2(50f, 50f);
-        loadingBarRect.offsetMax = new Vector2(-50f, 122f);
+        loadingBarRect.offsetMax = new Vector2(-50f, 108f);
 
         // A transparent prism restores the reference silhouette without returning to
         // the old opaque, boxed capsule. The fill remains visible through its glass,
@@ -472,9 +472,16 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
     {
         if (runeSprites == null || runeSprites.Length == 0) return;
         int changes = runesInitialized ? 4 : unlitRuneImages.Count;
+        int firstUndecodedRune = Mathf.Clamp(Mathf.FloorToInt(displayedProgress * unlitRuneImages.Count), 0, unlitRuneImages.Count);
+        if (runesInitialized && firstUndecodedRune >= unlitRuneImages.Count)
+        {
+            return;
+        }
         for (int n = 0; n < changes; n++)
         {
-            int i = runesInitialized ? Random.Range(0, unlitRuneImages.Count) : n;
+            // Runes behind the energy front are decoded and must remain stable. Only
+            // the still-dim portion ahead of progress continues to scramble.
+            int i = runesInitialized ? Random.Range(firstUndecodedRune, unlitRuneImages.Count) : n;
             Sprite sprite = runeSprites[Random.Range(0, runeSprites.Length)];
             unlitRuneImages[i].sprite = sprite;
             glowingRuneImages[i].sprite = sprite;
@@ -488,7 +495,7 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
         {
             Image rune = CreateImage($"Rune_{i:00}", parent, color);
             float x = Mathf.Lerp(startAnchor, endAnchor, (i + 0.5f) / RuneCount);
-            Pin(rune.rectTransform, new Vector2(x, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(38f, 46f), Vector2.zero);
+            Pin(rune.rectTransform, new Vector2(x, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(28f, 34f), Vector2.zero);
             rune.preserveAspect = true;
             targets.Add(rune);
         }
@@ -685,7 +692,11 @@ public sealed class MythicLoadingOverlay : MonoBehaviour
             case 8: Stroke(.64f, .10f, .26f, .50f); Stroke(.26f, .50f, .68f, .48f); Stroke(.68f, .48f, .36f, .90f); break;
             case 9: Stroke(.20f, .15f, .20f, .85f); Stroke(.80f, .15f, .80f, .85f); Stroke(.20f, .50f, .80f, .50f); Stroke(.20f, .15f, .80f, .50f); break;
             case 10: Stroke(.18f, .18f, .82f, .82f); Stroke(.82f, .18f, .18f, .82f); Stroke(.28f, .18f, .72f, .18f); Stroke(.28f, .82f, .72f, .82f); break;
-            default: Stroke(.34f, .12f, .34f, .88f); Stroke(.34f, .34f, .76f, .18f); Stroke(.34f, .52f, .76f, .52f); Stroke(.34f, .70f, .76f, .88f); break;
+            case 11: Stroke(.34f, .12f, .34f, .88f); Stroke(.34f, .34f, .76f, .18f); Stroke(.34f, .52f, .76f, .52f); Stroke(.34f, .70f, .76f, .88f); break;
+            case 12: Stroke(.18f, .22f, .82f, .22f); Stroke(.50f, .22f, .50f, .88f); Stroke(.24f, .62f, .50f, .42f); Stroke(.76f, .62f, .50f, .42f); break;
+            case 13: Stroke(.50f, .10f, .50f, .90f); Stroke(.18f, .34f, .50f, .10f); Stroke(.82f, .34f, .50f, .10f); Stroke(.18f, .72f, .50f, .50f); Stroke(.82f, .72f, .50f, .50f); break;
+            case 14: Stroke(.22f, .14f, .78f, .14f); Stroke(.78f, .14f, .28f, .52f); Stroke(.28f, .52f, .78f, .86f); Stroke(.78f, .86f, .22f, .86f); break;
+            default: Stroke(.18f, .50f, .82f, .50f); Stroke(.36f, .18f, .36f, .82f); Stroke(.64f, .18f, .64f, .82f); Stroke(.18f, .50f, .36f, .18f); Stroke(.82f, .50f, .64f, .82f); break;
         }
     }
 
